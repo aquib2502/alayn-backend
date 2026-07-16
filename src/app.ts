@@ -25,7 +25,7 @@ app.use('/api/v1', routes);
 // Base Route
 app.get('/', (req, res) => {
   res.json({
-    message: 'Welcome to the Café Operations & Management Platform API',
+    message: 'Welcome to the Alayn Operations & Management Platform API',
     docs: '/api/docs',
   });
 });
