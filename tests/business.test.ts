@@ -114,7 +114,7 @@ jest.mock('../src/config/prisma', () => ({
   },
 }));
 
-describe('Café Platform Business Logic Tests', () => {
+describe('Alayn Platform Business Logic Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -126,7 +126,7 @@ describe('Café Platform Business Logic Tests', () => {
     it('should login user with correct password', async () => {
       const mockUser = {
         id: 'u-1',
-        email: 'owner@cafe.com',
+        email: 'owner@alayn.com',
         passwordHash: bcrypt.hashSync('password123', 4),
         role: 'OWNER',
         name: 'John Owner',
@@ -134,7 +134,7 @@ describe('Café Platform Business Logic Tests', () => {
       (prisma.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
       (prisma.refreshToken.create as jest.Mock).mockResolvedValue({});
 
-      const result = await authService.login('owner@cafe.com', 'password123');
+      const result = await authService.login('owner@alayn.com', 'password123');
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
       expect(result.user.role).toBe('OWNER');
@@ -142,7 +142,7 @@ describe('Café Platform Business Logic Tests', () => {
 
     it('should throw error for invalid credentials', async () => {
       (prisma.user.findFirst as jest.Mock).mockResolvedValue(null);
-      await expect(authService.login('owner@cafe.com', 'badpass')).rejects.toThrow(AppError);
+      await expect(authService.login('owner@alayn.com', 'badpass')).rejects.toThrow(AppError);
     });
   });
 

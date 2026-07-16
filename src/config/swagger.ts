@@ -1,7 +1,7 @@
 export const swaggerDocument = {
   openapi: '3.0.0',
   info: {
-    title: 'Café Operations & Management Platform API',
+    title: 'Alayn Operations & Management Platform API',
     description: 'Phase 1 Backend API documentation',
     version: '1.0.0',
   },
@@ -37,7 +37,7 @@ export const swaggerDocument = {
               schema: {
                 type: 'object',
                 properties: {
-                  email: { type: 'string', example: 'owner@cafe.com' },
+                  email: { type: 'string', example: 'owner@alayn.com' },
                   password: { type: 'string', example: 'password123' },
                 },
                 required: ['email', 'password'],

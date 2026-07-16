@@ -12,7 +12,7 @@ async function main() {
   // 1. Create Outlets
   const outletA = await prisma.outlet.create({
     data: {
-      name: 'Central Café (Outlet A)',
+      name: 'Central Alayn (Outlet A)',
       address: '123 Main Street, Cityville',
       cgstRateDecimal: 9.0,
       sgstRateDecimal: 9.0,
@@ -21,7 +21,7 @@ async function main() {
 
   const outletB = await prisma.outlet.create({
     data: {
-      name: 'North Café (Outlet B)',
+      name: 'North Alayn (Outlet B)',
       address: '456 North Avenue, Townsville',
       cgstRateDecimal: 9.0,
       sgstRateDecimal: 9.0,
@@ -33,7 +33,7 @@ async function main() {
   // 2. Create Users
   const ownerUser = await prisma.user.create({
     data: {
-      email: 'owner@cafe.com',
+      email: 'owner@alayn.com',
       passwordHash,
       name: 'John Owner',
       role: Role.OWNER,
@@ -42,7 +42,7 @@ async function main() {
 
   const managerUser = await prisma.user.create({
     data: {
-      email: 'manager@cafe.com',
+      email: 'manager@alayn.com',
       passwordHash,
       name: 'Jane Manager',
       role: Role.MANAGER,
@@ -51,7 +51,7 @@ async function main() {
 
   const staffUser = await prisma.user.create({
     data: {
-      email: 'staff@cafe.com',
+      email: 'staff@alayn.com',
       passwordHash,
       name: 'Sam Staff',
       role: Role.STAFF,
@@ -60,7 +60,7 @@ async function main() {
 
   const kitchenUser = await prisma.user.create({
     data: {
-      email: 'kitchen@cafe.com',
+      email: 'kitchen@alayn.com',
       passwordHash,
       name: 'Kevin Kitchen',
       role: Role.KITCHEN,
