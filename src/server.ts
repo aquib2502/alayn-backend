@@ -9,8 +9,8 @@ const server = app.listen(env.PORT, async () => {
   try {
     await prisma.$connect();
     logger.info('Database Connection Established Successfully');
-  } catch (error) {
-    logger.error('Failed to connect to the Database:', error);
+  } catch (error: any) {
+    logger.error(`Failed to connect to the Database: ${error?.message || error}`);
   }
 });
 
