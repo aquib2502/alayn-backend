@@ -17,14 +17,26 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
     return next(new AppError('BAD_REQUEST', 'Outlet ID is required for this operation', 400));
   }
 
-  // Owners have access to all outlets automatically
-  if (req.user.role === 'OWNER') {
-    req.outletId = outletId;
-    return next();
-  }
-
   try {
-    // Check if user is assigned to this outlet
+    // 1. Verify the outlet belongs to the user's tenant
+    const outlet = await prisma.outlet.findFirst({
+      where: {
+        id: outletId,
+        tenantId: req.user.tenantId || undefined,
+      },
+    });
+
+    if (!outlet) {
+      return next(new AppError('FORBIDDEN', 'Access to this outlet is denied or does not exist under your tenant', 403));
+    }
+
+    // 2. Tenant Owners and Super Admins have access to all outlets under their tenant
+    if (req.user.role === 'TENANT_OWNER' || req.user.role === 'SUPER_ADMIN') {
+      req.outletId = outletId;
+      return next();
+    }
+
+    // 3. Otherwise (Managers, Staff, etc.), check explicit assignment to this outlet
     const userOutlet = await prisma.userOutlet.findUnique({
       where: {
         userId_outletId: {

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/AppError';
 
-export function authorize(...allowedRoles: ('OWNER' | 'MANAGER' | 'STAFF' | 'KITCHEN')[]) {
+export function authorize(...allowedRoles: ('SUPER_ADMIN' | 'TENANT_OWNER' | 'MANAGER' | 'STAFF' | 'KITCHEN')[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return next(new AppError('UNAUTHORIZED', 'Authentication required', 401));

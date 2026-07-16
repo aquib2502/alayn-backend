@@ -13,8 +13,8 @@ router.use(authMiddleware);
 router.use(tenantMiddleware);
 
 // Only OWNER, MANAGER, and KITCHEN can manage waste logs
-router.post('/', authorize('OWNER', 'MANAGER', 'KITCHEN'), validate({ body: createWasteLogSchema }), controller.create);
-router.get('/', authorize('OWNER', 'MANAGER'), controller.list);
-router.get('/summary', authorize('OWNER', 'MANAGER'), controller.summary);
+router.post('/', authorize('TENANT_OWNER', 'MANAGER', 'KITCHEN'), validate({ body: createWasteLogSchema }), controller.create);
+router.get('/', authorize('TENANT_OWNER', 'MANAGER'), controller.list);
+router.get('/summary', authorize('TENANT_OWNER', 'MANAGER'), controller.summary);
 
 export default router;

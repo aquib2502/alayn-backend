@@ -13,11 +13,11 @@ router.use(authMiddleware);
 router.use(tenantMiddleware);
 
 // Manage inventory items (OWNER & MANAGER)
-router.post('/items', authorize('OWNER', 'MANAGER'), validate({ body: createItemSchema }), controller.create);
-router.get('/items/:id/stock', authorize('OWNER', 'MANAGER', 'STAFF', 'KITCHEN'), controller.getStock);
-router.post('/items/:id/adjust', authorize('OWNER', 'MANAGER'), validate({ body: adjustStockSchema }), controller.adjust);
+router.post('/items', authorize('TENANT_OWNER', 'MANAGER'), validate({ body: createItemSchema }), controller.create);
+router.get('/items/:id/stock', authorize('TENANT_OWNER', 'MANAGER', 'STAFF', 'KITCHEN'), controller.getStock);
+router.post('/items/:id/adjust', authorize('TENANT_OWNER', 'MANAGER'), validate({ body: adjustStockSchema }), controller.adjust);
 
 // Recipes (OWNER & MANAGER)
-router.post('/recipes', authorize('OWNER', 'MANAGER'), controller.createRecipe);
+router.post('/recipes', authorize('TENANT_OWNER', 'MANAGER'), controller.createRecipe);
 
 export default router;

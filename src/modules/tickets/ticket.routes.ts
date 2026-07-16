@@ -31,7 +31,7 @@ router.post(
   '/staff-queries',
   authMiddleware,
   tenantMiddleware,
-  authorize('OWNER', 'MANAGER', 'STAFF', 'KITCHEN'),
+  authorize('TENANT_OWNER', 'MANAGER', 'STAFF', 'KITCHEN'),
   validate({ body: createStaffQuerySchema }),
   controller.createStaffQuery
 );
@@ -41,7 +41,7 @@ router.get(
   '/tickets',
   authMiddleware,
   tenantMiddleware,
-  authorize('OWNER', 'MANAGER'),
+  authorize('TENANT_OWNER', 'MANAGER'),
   controller.list
 );
 
@@ -49,7 +49,7 @@ router.patch(
   '/tickets/:id',
   authMiddleware,
   tenantMiddleware,
-  authorize('OWNER', 'MANAGER'),
+  authorize('TENANT_OWNER', 'MANAGER'),
   validate({ body: updateTicketStatusSchema }),
   controller.updateStatus
 );

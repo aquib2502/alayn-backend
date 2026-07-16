@@ -13,8 +13,8 @@ router.use(authMiddleware);
 router.use(tenantMiddleware);
 
 // Only OWNER & MANAGER can perform PO activities
-router.post('/suppliers', authorize('OWNER', 'MANAGER'), controller.createSupplier);
-router.post('/', authorize('OWNER', 'MANAGER'), validate({ body: createPOSchema }), controller.createPO);
-router.patch('/:id/receive', authorize('OWNER', 'MANAGER'), validate({ body: receivePOSchema }), controller.receivePO);
+router.post('/suppliers', authorize('TENANT_OWNER', 'MANAGER'), controller.createSupplier);
+router.post('/', authorize('TENANT_OWNER', 'MANAGER'), validate({ body: createPOSchema }), controller.createPO);
+router.patch('/:id/receive', authorize('TENANT_OWNER', 'MANAGER'), validate({ body: receivePOSchema }), controller.receivePO);
 
 export default router;
