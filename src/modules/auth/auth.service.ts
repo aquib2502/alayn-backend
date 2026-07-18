@@ -24,6 +24,75 @@ export class AuthService {
     return crypto.randomBytes(40).toString('hex');
   }
 
+
+  async register(data: {
+    user: {
+      name: string;
+      email: string;
+      password: string;
+      phoneNo: string;
+    };
+    outlet: {
+      name: string;
+      address: string;
+      city: string;
+      state: string;
+      country: string;
+    };
+  }) {
+
+    // Check if email already exists
+    const existingUser = await this.authRepository.findUserByEmail(
+      data.user.email
+    );
+
+    if (existingUser) {
+      throw new AppError(
+        "EMAIL_ALREADY_EXISTS",
+        "Email already exists.",
+        409
+      );
+    }
+
+    // Hash password
+    const passwordHash = await bcrypt.hash(data.user.password, 10);
+
+    // Create Owner + Outlet
+    const { user, outlet } =
+      await this.authRepository.registerOwner({
+        user: {
+          name: data.user.name,
+          email: data.user.email,
+          passwordHash,
+          phoneNo: data.user.phoneNo,
+        },
+
+        outlet: {
+          name: data.outlet.name,
+          address: data.outlet.address,
+          city: data.outlet.city,
+          state: data.outlet.state,
+          country: data.outlet.country,
+        },
+      });
+
+    return {
+      message: "Registration successful. Please login to continue.",
+
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+
+      outlet: {
+        id: outlet.id,
+        name: outlet.name,
+      },
+    };
+  }
+
   async login(email: string, password: string) {
     const user = await this.authRepository.findUserByEmail(email);
     if (!user) {
