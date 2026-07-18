@@ -40,6 +40,21 @@ const getCookie = (req: Request, name: string): string | null => {
 export class AuthController {
   private authService = new AuthService();
 
+
+  register = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const result = await this.authService.register(req.body);
+
+      return sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   login = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { email, password } = req.body;

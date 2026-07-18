@@ -2,6 +2,79 @@ import { prisma, } from '../../config/prisma';
 import { Prisma, Role } from "@prisma/client";
 
 export class AuthRepository {
+
+  async registerOwner(data: {
+    user: {
+      name: string;
+      email: string;
+      passwordHash: string;
+      phoneNo: string;
+    };
+
+    outlet: {
+      name: string;
+      address: string;
+      city: string;
+      state: string;
+      country: string;
+    };
+  }) {
+
+    return prisma.$transaction(async (tx) => {
+
+      // 1. Create Tenant
+
+      const tenant = await tx.tenant.create({
+        data: {
+          name: data.user.name,
+        },
+      });
+
+      // 2. Create User
+
+      const user = await tx.user.create({
+        data: {
+          tenantId: tenant.id,
+          name: data.user.name,
+          email: data.user.email,
+          passwordHash: data.user.passwordHash,
+          phoneNo: data.user.phoneNo,
+          role: Role.TENANT_OWNER,
+        },
+      });
+
+      // 3. Create Outlet
+
+      const outlet = await tx.outlet.create({
+        data: {
+          tenantId: tenant.id,
+          name: data.outlet.name,
+          address: data.outlet.address,
+          city: data.outlet.city,
+          state: data.outlet.state,
+          country: data.outlet.country,
+        },
+      });
+
+      // 4. Link User -> Outlet
+
+      await tx.userOutlet.create({
+        data: {
+          userId: user.id,
+          outletId: outlet.id,
+        },
+      });
+
+      return {
+        tenant,
+        user,
+        outlet,
+      };
+    });
+
+  }
+
+
   async findUserByEmail(email: string) {
     return prisma.user.findFirst({
       where: {

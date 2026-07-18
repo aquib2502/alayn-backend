@@ -31,39 +31,6 @@ export class AuthService {
     });
   }
 
-  async signup(email: string, passwordHash: string, userName: string, restaurantName: string) {
-    const existingUser = await this.authRepository.findUserByEmail(email);
-    if (existingUser) {
-      throw new AppError('EMAIL_ALREADY_EXISTS', 'Email is already registered', 400);
-    }
-
-    const { user, tenant } = await this.authRepository.createTenantUser(
-      restaurantName,
-      userName,
-      email,
-      passwordHash
-    );
-
-    const accessToken = this.generateUserAccessToken(user);
-    const rawRefreshToken = this.generateUserRefreshToken(user);
-    const refreshHash = this.hashToken(rawRefreshToken);
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days in dev
-
-    await this.authRepository.createRefreshToken(user.id, refreshHash, expiresAt);
-
-    return {
-      accessToken,
-      refreshToken: rawRefreshToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        tenant,
-      },
-    };
-  }
-
 
   async register(data: {
     user: {
