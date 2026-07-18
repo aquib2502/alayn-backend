@@ -15,10 +15,10 @@ const inventoryController = new InventoryController();
 router.get('/', authMiddleware, tenantMiddleware, controller.getPublicMenu);
 
 // Category and item management (OWNER & MANAGER)
-router.post('/categories', authMiddleware, tenantMiddleware, authorize('OWNER', 'MANAGER'), validate({ body: createCategorySchema }), controller.createCategory);
-router.post('/items', authMiddleware, tenantMiddleware, authorize('OWNER', 'MANAGER'), validate({ body: createMenuItemSchema }), controller.createMenuItem);
+router.post('/categories', authMiddleware, tenantMiddleware, authorize('TENANT_OWNER', 'MANAGER'), validate({ body: createCategorySchema }), controller.createCategory);
+router.post('/items', authMiddleware, tenantMiddleware, authorize('TENANT_OWNER', 'MANAGER'), validate({ body: createMenuItemSchema }), controller.createMenuItem);
 
 // Menu item costing (OWNER & MANAGER)
-router.get('/items/:id/cost', authMiddleware, tenantMiddleware, authorize('OWNER', 'MANAGER'), inventoryController.getMenuItemCost);
+router.get('/items/:id/cost', authMiddleware, tenantMiddleware, authorize('TENANT_OWNER', 'MANAGER'), inventoryController.getMenuItemCost);
 
 export default router;

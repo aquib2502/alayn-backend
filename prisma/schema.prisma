@@ -8,7 +8,8 @@ generator client {
 }
 
 enum Role {
-  OWNER
+  SUPER_ADMIN
+  TENANT_OWNER
   MANAGER
   STAFF
   KITCHEN
@@ -117,6 +118,7 @@ enum TicketPriority {
 
 model User {
   id           String        @id @default(uuid()) @db.Uuid
+  tenantId     String?       @db.Uuid
   email        String        @unique
   passwordHash String
   name         String
@@ -125,13 +127,54 @@ model User {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   deletedAt    DateTime?
+  
+  tenant        Tenant?       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   outlets      UserOutlet[]
   refreshTokens RefreshToken[]
   employees    Employee[]
 }
 
+model Tenant {
+  id          String        @id @default(uuid()) @db.Uuid
+  name        String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  outlets     Outlet[]
+  users       User[]
+  subscription Subscription?
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  TRIALING
+  INACTIVE
+}
+
+model Subscription {
+  id                   String             @id @default(uuid()) @db.Uuid
+  tenantId             String             @unique @db.Uuid
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
+  status               SubscriptionStatus @default(ACTIVE)
+  planId               String             @default("BASIC")
+  trialStart           DateTime?
+  trialEnd             DateTime?
+  currentPeriodStart   DateTime           @default(now())
+  currentPeriodEnd     DateTime
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  tenant               Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
 model Outlet {
   id               String        @id @default(uuid()) @db.Uuid
+  tenantId         String        @db.Uuid
   name             String
   address          String
   city             String
@@ -142,6 +185,8 @@ model Outlet {
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
   deletedAt        DateTime?
+
+  tenant           Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   users            UserOutlet[]
   employees        Employee[]
   shifts           Shift[]
