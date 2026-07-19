@@ -28,19 +28,8 @@ declare global {
   }
 }
 
-const getCookie = (req: Request, name: string): string | null => {
-  const cookieHeader = req.headers.cookie;
-  if (!cookieHeader) return null;
-  const cookies = cookieHeader.split(';');
-  for (const cookie of cookies) {
-    const [key, value] = cookie.trim().split('=');
-    if (key === name) return value ?? null;
-  }
-  return null;
-};
-
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
-  let token = getCookie(req, 'token');
+  let token = req.cookies?.token;
 
   if (!token) {
     const authHeader = req.headers.authorization;

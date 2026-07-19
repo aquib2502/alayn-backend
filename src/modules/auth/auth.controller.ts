@@ -7,34 +7,25 @@ import { AuthenticatedRequest } from '../../middleware/auth.middleware';
 // Helper to set HTTP-Only cookies
 const setTokenCookies = (res: Response, token: string, refreshToken?: string): void => {
   const isProduction = process.env.NODE_ENV === 'production';
-
-  res.cookie('token', token, {
+  const cookieOptions = {
     httpOnly: true,
     secure: isProduction,
-    sameSite: 'lax',
+    sameSite: 'lax' as const,
+    domain: isProduction ? '.alaynai.com' : undefined,
+  };
+
+  res.cookie('token', token, {
+    ...cookieOptions,
     maxAge: 15 * 60 * 1000, // 15 minutes
   });
 
   if (refreshToken) {
     const refreshMaxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
     res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax',
+      ...cookieOptions,
       maxAge: refreshMaxAge,
     });
   }
-};
-
-const getCookie = (req: Request, name: string): string | null => {
-  const cookieHeader = req.headers.cookie;
-  if (!cookieHeader) return null;
-  const cookies = cookieHeader.split(';');
-  for (const cookie of cookies) {
-    const [key, value] = cookie.trim().split('=');
-    if (key === name) return value ?? null;
-  }
-  return null;
 };
 
 export class AuthController {
@@ -73,7 +64,7 @@ export class AuthController {
 
   refresh = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const refreshToken = getCookie(req, 'refreshToken');
+      const refreshToken = req.cookies?.refreshToken;
       if (!refreshToken) {
         return res.status(401).json({ error: 'Refresh token required' });
       }
@@ -92,24 +83,21 @@ export class AuthController {
 
   logout = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const refreshToken = getCookie(req, 'refreshToken');
+      const refreshToken = req.cookies?.refreshToken;
       if (refreshToken) {
         await this.authService.logout(refreshToken);
       }
 
       const isProduction = process.env.NODE_ENV === 'production';
-      res.clearCookie('token', {
+      const cookieOptions = {
         httpOnly: true,
         secure: isProduction,
-        sameSite: 'lax',
+        sameSite: 'lax' as const,
+        domain: isProduction ? '.alaynai.com' : undefined,
         path: '/',
-      });
-      res.clearCookie('refreshToken', {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: 'lax',
-        path: '/',
-      });
+      };
+      res.clearCookie('token', cookieOptions);
+      res.clearCookie('refreshToken', cookieOptions);
 
       return sendSuccess(res, { message: 'Logged out successfully' });
     } catch (error) {
