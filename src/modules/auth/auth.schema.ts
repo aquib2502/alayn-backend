@@ -18,11 +18,10 @@ export const registerSchema = z.object({
     phoneNo: z.string().min(10),
   }),
 
-  outlet: z.object({
+  tenant: z.object({
     name: z.string().min(2),
-    address: z.string().min(3),
-    city: z.string().min(2),
-    state: z.string().min(2),
-    country: z.string().min(2),
+    locationsCount: z.string().min(1),
+    businessType: z.string().min(2),
+    contactDetail: z.string().min(10),
   }),
 });

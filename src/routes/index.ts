@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import authRoutes from '../modules/auth/auth.routes';
+import outletRoutes from '../modules/outlet/outlet.routes';
 import employeeRoutes, { leaveRouter } from '../modules/employees/employee.routes';
 import shiftRoutes from '../modules/shifts/shift.routes';
 import attendanceRoutes from '../modules/attendance/attendance.routes';
@@ -15,6 +16,7 @@ const router = Router();
 
 // Bind all routes under /api/v1
 router.use('/auth', authRoutes);
+router.use('/outlets', outletRoutes);
 router.use('/employees', employeeRoutes);
 router.use('/leave-requests', leaveRouter);
 router.use('/shifts', shiftRoutes);

@@ -39,12 +39,11 @@ export class AuthService {
       password: string;
       phoneNo: string;
     };
-    outlet: {
+    tenant: {
       name: string;
-      address: string;
-      city: string;
-      state: string;
-      country: string;
+      locationsCount: string;
+      businessType: string;
+      contactDetail: string;
     };
   }) {
 
@@ -64,8 +63,8 @@ export class AuthService {
     // Hash password
     const passwordHash = await bcrypt.hash(data.user.password, 10);
 
-    // Create Owner + Outlet
-    const { user, outlet } =
+    // Create Owner
+    const { user, tenant } =
       await this.authRepository.registerOwner({
         user: {
           name: data.user.name,
@@ -74,12 +73,11 @@ export class AuthService {
           phoneNo: data.user.phoneNo,
         },
 
-        outlet: {
-          name: data.outlet.name,
-          address: data.outlet.address,
-          city: data.outlet.city,
-          state: data.outlet.state,
-          country: data.outlet.country,
+        tenant: {
+          name: data.tenant.name,
+          locationsCount: data.tenant.locationsCount,
+          businessType: data.tenant.businessType,
+          contactDetail: data.tenant.contactDetail,
         },
       });
 
@@ -93,9 +91,9 @@ export class AuthService {
         role: user.role,
       },
 
-      outlet: {
-        id: outlet.id,
-        name: outlet.name,
+      tenant: {
+        id: tenant.id,
+        name: tenant.name,
       },
     };
   }

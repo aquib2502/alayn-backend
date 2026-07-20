@@ -11,12 +11,11 @@ export class AuthRepository {
       phoneNo: string;
     };
 
-    outlet: {
+    tenant: {
       name: string;
-      address: string;
-      city: string;
-      state: string;
-      country: string;
+      locationsCount: string;
+      businessType: string;
+      contactDetail: string;
     };
   }) {
 
@@ -26,7 +25,10 @@ export class AuthRepository {
 
       const tenant = await tx.tenant.create({
         data: {
-          name: data.user.name,
+          name: data.tenant.name,
+          locationsCount: data.tenant.locationsCount,
+          businessType: data.tenant.businessType,
+          contactDetail: data.tenant.contactDetail,
         },
       });
 
@@ -43,32 +45,9 @@ export class AuthRepository {
         },
       });
 
-      // 3. Create Outlet
-
-      const outlet = await tx.outlet.create({
-        data: {
-          tenantId: tenant.id,
-          name: data.outlet.name,
-          address: data.outlet.address,
-          city: data.outlet.city,
-          state: data.outlet.state,
-          country: data.outlet.country,
-        },
-      });
-
-      // 4. Link User -> Outlet
-
-      await tx.userOutlet.create({
-        data: {
-          userId: user.id,
-          outletId: outlet.id,
-        },
-      });
-
       return {
         tenant,
         user,
-        outlet,
       };
     });
 
