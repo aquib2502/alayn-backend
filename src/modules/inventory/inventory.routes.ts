@@ -13,11 +13,14 @@ router.use(authMiddleware);
 router.use(businessMiddleware);
 
 // Manage inventory items (OWNER & MANAGER)
+router.get('/items', authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF', 'KITCHEN'), controller.list);
 router.post('/items', authorize('BUSINESS_OWNER', 'MANAGER'), validate({ body: createItemSchema }), controller.create);
 router.get('/items/:id/stock', authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF', 'KITCHEN'), controller.getStock);
 router.post('/items/:id/adjust', authorize('BUSINESS_OWNER', 'MANAGER'), validate({ body: adjustStockSchema }), controller.adjust);
+router.get('/alerts', authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF', 'KITCHEN'), controller.getAlerts);
 
 // Recipes (OWNER & MANAGER)
 router.post('/recipes', authorize('BUSINESS_OWNER', 'MANAGER'), controller.createRecipe);
 
 export default router;
+

@@ -78,5 +78,61 @@ export class InventoryRepository {
       include: { item: true },
     });
   }
+
+  async findManyItems(outletId: string) {
+    const items = await prisma.item.findMany({
+      where: { outletId, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const ledgerAggregates = await prisma.stockLedgerEntry.groupBy({
+      by: ['itemId'],
+      where: { outletId },
+      _sum: { change: true },
+    });
+
+    const stockMap = new Map<string, number>();
+    for (const agg of ledgerAggregates) {
+      stockMap.set(agg.itemId, agg._sum.change ? agg._sum.change.toNumber() : 0);
+    }
+
+    return items.map((item) => ({
+      ...item,
+      reorderThreshold: item.reorderThreshold.toNumber(),
+      currentStock: stockMap.get(item.id) || 0,
+    }));
+  }
+
+  async getLowStockAndExpiryAlerts(outletId: string) {
+    const items = await this.findManyItems(outletId);
+    const lowStockItems = items.filter((item) => item.currentStock <= item.reorderThreshold);
+
+    const now = new Date();
+    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const expiringBatches = await prisma.stockBatch.findMany({
+      where: {
+        outletId,
+        expiryDate: {
+          lte: thirtyDaysFromNow,
+        },
+      },
+      include: {
+        item: true,
+      },
+      orderBy: {
+        expiryDate: 'asc',
+      },
+    });
+
+    return {
+      lowStockItems,
+      expiringBatches: expiringBatches.map((b) => ({
+        ...b,
+        quantity: b.quantity.toNumber(),
+      })),
+    };
+  }
 }
 export default InventoryRepository;
+

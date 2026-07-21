@@ -8,14 +8,25 @@ export async function businessMiddleware(req: Request, res: Response, next: Next
   }
 
   // Retrieve outlet ID from header, query, params, or body
-  const outletId = (req.headers['x-outlet-id'] as string) || 
-                   (req.query.outletId as string) || 
-                   (req.params.outletId as string) || 
-                   (req.body.outletId as string);
+  let outletId = (req.headers['x-outlet-id'] as string) || 
+                 (req.query.outletId as string) || 
+                 (req.params.outletId as string) || 
+                 (req.body.outletId as string);
+
+  // Fallback: If no outletId passed in header, auto-fallback to user's first outlet
+  if (!outletId && req.user.businessId) {
+    const firstOutlet = await prisma.outlet.findFirst({
+      where: { businessId: req.user.businessId },
+    });
+    if (firstOutlet) {
+      outletId = firstOutlet.id;
+    }
+  }
 
   if (!outletId) {
     return next(new AppError('BAD_REQUEST', 'Outlet ID is required for this operation', 400));
   }
+
 
   // Support 'all' outlets for business owners/super admins
   if (outletId === 'all') {

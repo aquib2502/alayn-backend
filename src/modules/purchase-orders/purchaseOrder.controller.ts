@@ -15,6 +15,27 @@ export class PurchaseOrderController {
     }
   };
 
+  getSuppliers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const outletId = req.outletId!;
+      const result = await this.poService.getSuppliers(outletId);
+      return sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getPOs = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const outletId = req.outletId!;
+      const result = await this.poService.getPurchaseOrders(outletId);
+      return sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+
   createPO = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const outletId = req.outletId!;
