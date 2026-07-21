@@ -151,10 +151,87 @@ export class EmployeeRepository {
     return { data: formattedData, total };
   }
 
-  async update(outletId: string, id: string, data: any) {
-    return prisma.employee.update({
+  async update(activeOutletId: string, id: string, data: any) {
+    const { email, password, outletIds, ...employeeFields } = data;
+
+    const existingEmployee = await prisma.employee.findUnique({
       where: { id },
-      data,
+      include: { user: true },
+    });
+
+    if (!existingEmployee) {
+      throw new AppError('EMPLOYEE_NOT_FOUND', 'Employee not found', 404);
+    }
+
+    let targetOutletIds: string[] | undefined = undefined;
+    if (Array.isArray(outletIds) && outletIds.length > 0) {
+      targetOutletIds = outletIds;
+      if ((data.role || existingEmployee.role) !== 'MANAGER') {
+        targetOutletIds = [targetOutletIds[0]];
+      }
+    }
+
+    if (email && existingEmployee.userId) {
+      const conflictingUser = await prisma.user.findFirst({
+        where: {
+          email,
+          id: { not: existingEmployee.userId },
+        },
+      });
+      if (conflictingUser) {
+        throw new AppError('EMAIL_ALREADY_EXISTS', 'Email is already taken by another user.', 409);
+      }
+    }
+
+    let newPasswordHash: string | undefined = undefined;
+    if (password && password.trim().length > 0) {
+      newPasswordHash = await bcrypt.hash(password, 10);
+    }
+
+    return prisma.$transaction(async (tx) => {
+      if (existingEmployee.userId) {
+        const userDataToUpdate: any = {};
+        if (data.name) userDataToUpdate.name = data.name;
+        if (data.phone) userDataToUpdate.phoneNo = data.phone;
+        if (data.role) userDataToUpdate.role = data.role;
+        if (email) userDataToUpdate.email = email;
+        if (newPasswordHash) userDataToUpdate.passwordHash = newPasswordHash;
+
+        if (Object.keys(userDataToUpdate).length > 0) {
+          await tx.user.update({
+            where: { id: existingEmployee.userId },
+            data: userDataToUpdate,
+          });
+        }
+
+        if (targetOutletIds) {
+          await tx.userOutlet.deleteMany({
+            where: { userId: existingEmployee.userId },
+          });
+
+          await tx.userOutlet.createMany({
+            data: targetOutletIds.map((oId) => ({
+              userId: existingEmployee.userId!,
+              outletId: oId,
+            })),
+          });
+        }
+      }
+
+      const employeeDataToUpdate: any = {
+        ...(data.name && { name: data.name }),
+        ...(data.phone && { phone: data.phone }),
+        ...(data.role && { role: data.role }),
+        ...(data.status && { status: data.status }),
+        ...(data.joiningDate && { joiningDate: new Date(data.joiningDate) }),
+        ...(email && { email }),
+        ...(targetOutletIds && { outletId: targetOutletIds[0] }),
+      };
+
+      return tx.employee.update({
+        where: { id },
+        data: employeeDataToUpdate,
+      });
     });
   }
 
