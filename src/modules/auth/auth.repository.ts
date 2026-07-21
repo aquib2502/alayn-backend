@@ -45,9 +45,19 @@ export class AuthRepository {
         },
       });
 
+      // 3. Create BusinessOwner link
+
+      const businessOwner = await tx.businessOwner.create({
+        data: {
+          userId: user.id,
+          businessId: business.id,
+        },
+      });
+
       return {
         business,
         user,
+        businessOwner,
       };
     });
 
@@ -66,6 +76,7 @@ export class AuthRepository {
             subscription: true,
           },
         },
+        businessOwner: true,
       },
     });
   }
@@ -82,6 +93,7 @@ export class AuthRepository {
             subscription: true,
           },
         },
+        businessOwner: true,
       },
     });
   }
@@ -107,6 +119,7 @@ export class AuthRepository {
                 subscription: true,
               },
             },
+            businessOwner: true,
           },
         },
       },

@@ -129,6 +129,7 @@ model User {
   deletedAt    DateTime?
   
   business     Business?     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessOwner BusinessOwner?
   outlets      UserOutlet[]
   refreshTokens RefreshToken[]
   employees    Employee[]
@@ -145,9 +146,22 @@ model Business {
   deletedAt      DateTime?
 
   // Relations
-  outlets     Outlet[]
-  users       User[]
+  outlets      Outlet[]
+  users        User[]
+  owners       BusinessOwner[]
   subscription Subscription?
+}
+
+model BusinessOwner {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @unique @db.Uuid
+  businessId String    @db.Uuid
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }
 
 enum SubscriptionStatus {
