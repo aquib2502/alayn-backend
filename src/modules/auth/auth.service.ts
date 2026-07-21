@@ -64,7 +64,7 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(data.user.password, 10);
 
     // Create Owner
-    const { user, business } =
+    const { user, business, businessOwner } =
       await this.authRepository.registerOwner({
         user: {
           name: data.user.name,
@@ -94,6 +94,12 @@ export class AuthService {
       business: {
         id: business.id,
         name: business.name,
+      },
+
+      businessOwner: {
+        id: businessOwner.id,
+        userId: businessOwner.userId,
+        businessId: businessOwner.businessId,
       },
     };
   }
@@ -125,6 +131,7 @@ export class AuthService {
         name: user.name,
         role: user.role,
         business: user.business,
+        businessOwner: user.businessOwner,
       },
     };
   }
@@ -161,6 +168,7 @@ export class AuthService {
         name: user.name,
         role: user.role,
         business: user.business,
+        businessOwner: user.businessOwner,
       },
     };
   }
@@ -181,6 +189,7 @@ export class AuthService {
       name: user.name,
       role: user.role,
       business: user.business,
+      businessOwner: user.businessOwner,
     };
   }
 }
