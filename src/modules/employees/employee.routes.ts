@@ -48,6 +48,13 @@ const upload = multer({
   },
 });
 
+const memoryUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+});
+
 const router = Router();
 const controller = new EmployeeController();
 
@@ -56,6 +63,7 @@ router.use(authMiddleware);
 router.use(businessMiddleware);
 
 // Only OWNER & MANAGER can perform employee profile actions
+router.post('/bulk-upload', authorize('BUSINESS_OWNER', 'MANAGER'), memoryUpload.single('file'), controller.bulkUpload);
 router.post('/', authorize('BUSINESS_OWNER', 'MANAGER'), validate({ body: createEmployeeSchema }), controller.create);
 router.get('/', authorize('BUSINESS_OWNER', 'MANAGER'), controller.list);
 router.patch('/:id', authorize('BUSINESS_OWNER', 'MANAGER'), validate({ body: updateEmployeeSchema }), controller.update);

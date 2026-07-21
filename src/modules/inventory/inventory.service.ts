@@ -1,5 +1,8 @@
 import { InventoryRepository } from './inventory.repository';
 import { AppError } from '../../utils/AppError';
+import { prisma } from '../../config/prisma';
+import { Prisma } from '@prisma/client';
+
 
 export class InventoryService {
   private inventoryRepository = new InventoryRepository();
@@ -27,7 +30,7 @@ export class InventoryService {
     };
   }
 
-  async adjustStock(outletId: string, itemId: string, change: number, reason: 'SALE' | 'WASTE' | 'PURCHASE' | 'ADJUSTMENT', referenceId?: string) {
+  async adjustStock(outletId: string, itemId: string, change: number, reason: 'SALE' | 'WASTE' | 'PURCHASE' | 'ADJUSTMENT', referenceId?: string, loggedById?: string) {
     const item = await this.inventoryRepository.findItemById(outletId, itemId);
     if (!item) {
       throw new AppError('ITEM_NOT_FOUND', 'Inventory item not found', 404);
@@ -41,8 +44,46 @@ export class InventoryService {
       }
     }
 
+    if (reason === 'WASTE' && change < 0) {
+      const wasteQty = Math.abs(change);
+      const costAtLoggingPaise = Math.round(wasteQty * item.unitCostPaise);
+      
+      // Get logged in user or fallback to first employee/user
+      let userId = loggedById;
+      if (!userId) {
+        const fallbackUser = await prisma.user.findFirst();
+        userId = fallbackUser?.id || "00000000-0000-0000-0000-000000000000";
+      }
+
+      return prisma.$transaction(async (tx) => {
+        const wasteLog = await tx.wasteLog.create({
+          data: {
+            itemId,
+            quantity: new Prisma.Decimal(wasteQty),
+            costAtLoggingPaise,
+            reason: 'SPOILAGE',
+            outletId,
+            loggedById: userId,
+          },
+        });
+
+
+
+        return tx.stockLedgerEntry.create({
+          data: {
+            outletId,
+            itemId,
+            change: new Prisma.Decimal(change),
+            reason: 'WASTE',
+            referenceId: wasteLog.id,
+          },
+        });
+      });
+    }
+
     return this.inventoryRepository.createLedgerEntry(outletId, itemId, change, reason, referenceId);
   }
+
 
   async createRecipe(outletId: string, data: { menuItemId: string; itemId: string; quantityPerUnit: number }) {
     // Verify item exists under business
@@ -88,5 +129,15 @@ export class InventoryService {
       breakdown,
     };
   }
+
+  async getAllItems(outletId: string) {
+    const items = await this.inventoryRepository.findManyItems(outletId);
+    return { items, total: items.length };
+  }
+
+  async getAlerts(outletId: string) {
+    return this.inventoryRepository.getLowStockAndExpiryAlerts(outletId);
+  }
 }
 export default InventoryService;
+

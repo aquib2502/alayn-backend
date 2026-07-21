@@ -1,11 +1,26 @@
 import { Request, Response, NextFunction } from 'express';
 import { EmployeeService } from './employee.service';
+import { EmployeeBulkService } from './employee-bulk.service';
 import { sendSuccess, sendList } from '../../utils/response';
 import { getPaginationParams } from '../../utils/pagination';
 import { AppError } from '../../utils/AppError';
 
 export class EmployeeController {
   private employeeService = new EmployeeService();
+  private employeeBulkService = new EmployeeBulkService();
+
+  bulkUpload = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const outletId = req.outletId!;
+      if (!req.file) {
+        throw new AppError('FILE_REQUIRED', 'Please upload an Excel or CSV file', 400);
+      }
+      const result = await this.employeeBulkService.processExcelFile(outletId, req.file.buffer);
+      return sendSuccess(res, result, 200);
+    } catch (error) {
+      next(error);
+    }
+  };
 
   create = async (req: Request, res: Response, next: NextFunction) => {
     try {

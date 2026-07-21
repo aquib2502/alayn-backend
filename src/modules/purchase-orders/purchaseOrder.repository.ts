@@ -49,5 +49,28 @@ export class PurchaseOrderRepository {
       },
     });
   }
+
+  async findSuppliers(outletId: string) {
+    return prisma.supplier.findMany({
+      where: { outletId, deletedAt: null },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async findPOs(outletId: string) {
+    return prisma.purchaseOrder.findMany({
+      where: { outletId, deletedAt: null },
+      include: {
+        actualSupplier: true,
+        items: {
+          include: {
+            item: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }
 export default PurchaseOrderRepository;
+
