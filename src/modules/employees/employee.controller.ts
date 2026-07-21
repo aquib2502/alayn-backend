@@ -84,6 +84,16 @@ export class EmployeeController {
     }
   };
 
+  listLeaves = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const outletId = req.outletId!;
+      const result = await this.employeeService.getLeaveRequests(outletId);
+      return sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   updateLeaveStatus = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const outletId = req.outletId!;

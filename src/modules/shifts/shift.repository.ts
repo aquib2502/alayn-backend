@@ -80,6 +80,21 @@ export class ShiftRepository {
     });
   }
 
+  async findShifts(outletId: string) {
+    return prisma.shift.findMany({
+      where: { outletId, deletedAt: null },
+      include: {
+        assignments: {
+          include: {
+            employee: true,
+          },
+        },
+        swapRequests: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async updateShiftAssignmentEmployee(id: string, employeeId: string) {
     return prisma.shiftAssignment.update({
       where: { id },

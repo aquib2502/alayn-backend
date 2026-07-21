@@ -26,5 +26,15 @@ export class AttendanceController {
       next(error);
     }
   };
+
+  listLogs = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const outletId = req.outletId!;
+      const result = await this.attendanceService.getAttendanceLogs(outletId);
+      return sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 export default AttendanceController;

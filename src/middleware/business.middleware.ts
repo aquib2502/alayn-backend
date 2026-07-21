@@ -17,6 +17,16 @@ export async function businessMiddleware(req: Request, res: Response, next: Next
     return next(new AppError('BAD_REQUEST', 'Outlet ID is required for this operation', 400));
   }
 
+  // Support 'all' outlets for business owners/super admins
+  if (outletId === 'all') {
+    if (req.user.role === 'BUSINESS_OWNER' || req.user.role === 'SUPER_ADMIN') {
+      req.outletId = 'all';
+      return next();
+    } else {
+      return next(new AppError('FORBIDDEN', 'Only business owners can access aggregated data across all outlets', 403));
+    }
+  }
+
   try {
     // 1. Verify the outlet belongs to the user's business
     const outlet = await prisma.outlet.findFirst({

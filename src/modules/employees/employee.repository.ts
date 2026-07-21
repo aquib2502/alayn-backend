@@ -81,6 +81,16 @@ export class EmployeeRepository {
     });
   }
 
+  async findLeaveRequests(outletId: string) {
+    return prisma.leaveRequest.findMany({
+      where: { outletId },
+      include: {
+        employee: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async updateLeaveRequestStatus(id: string, status: 'APPROVED' | 'REJECTED', approvedById: string) {
     return prisma.leaveRequest.update({
       where: { id },

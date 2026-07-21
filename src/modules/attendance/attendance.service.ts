@@ -42,5 +42,9 @@ export class AttendanceService {
 
     return this.attendanceRepository.updateAttendance(openRecord.id, now);
   }
+
+  async getAttendanceLogs(outletId: string) {
+    return this.attendanceRepository.findAttendanceLogs(outletId);
+  }
 }
 export default AttendanceService;

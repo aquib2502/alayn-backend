@@ -44,6 +44,10 @@ export class EmployeeService {
     return this.employeeRepository.createLeaveRequest(outletId, data);
   }
 
+  async getLeaveRequests(outletId: string) {
+    return this.employeeRepository.findLeaveRequests(outletId);
+  }
+
   async updateLeaveRequestStatus(outletId: string, leaveId: string, status: 'APPROVED' | 'REJECTED', approvedById: string) {
     const leave = await this.employeeRepository.findLeaveRequestById(outletId, leaveId);
     if (!leave) {

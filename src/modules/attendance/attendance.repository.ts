@@ -32,6 +32,16 @@ export class AttendanceRepository {
     });
   }
 
+  async findAttendanceLogs(outletId: string) {
+    return prisma.attendance.findMany({
+      where: { outletId },
+      include: {
+        employee: true,
+      },
+      orderBy: { checkInTime: 'desc' },
+    });
+  }
+
   async updateAttendance(id: string, checkOutTime: Date) {
     return prisma.attendance.update({
       where: { id },

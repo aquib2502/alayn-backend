@@ -12,7 +12,8 @@ const controller = new ShiftController();
 router.use(authMiddleware);
 router.use(businessMiddleware);
 
-// Only OWNER & MANAGER can configure shifts
+// Only OWNER & MANAGER can configure shifts, but all roles can view shifts
+router.get('/', authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF', 'KITCHEN'), controller.list);
 router.post('/', authorize('BUSINESS_OWNER', 'MANAGER'), validate({ body: createShiftSchema }), controller.create);
 router.post('/:id/assign', authorize('BUSINESS_OWNER', 'MANAGER'), validate({ body: assignShiftSchema }), controller.assign);
 
