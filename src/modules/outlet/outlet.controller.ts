@@ -9,12 +9,12 @@ export class OutletController {
 
   create = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const tenantId = req.user?.tenantId;
+      const businessId = req.user?.businessId;
       const userId = req.user?.id;
-      if (!tenantId || !userId) {
-        throw new AppError('UNAUTHORIZED', 'User not associated with a tenant', 401);
+      if (!businessId || !userId) {
+        throw new AppError('UNAUTHORIZED', 'User not associated with a business', 401);
       }
-      const result = await this.service.create(tenantId, userId, req.body);
+      const result = await this.service.create(businessId, userId, req.body);
       return sendSuccess(res, result, 201);
     } catch (error) {
       next(error);
@@ -23,15 +23,15 @@ export class OutletController {
 
   list = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const tenantId = req.user?.tenantId;
+      const businessId = req.user?.businessId;
       const userId = req.user?.id;
-      if (!tenantId || !userId) {
-        throw new AppError('UNAUTHORIZED', 'User not associated with a tenant', 401);
+      if (!businessId || !userId) {
+        throw new AppError('UNAUTHORIZED', 'User not associated with a business', 401);
       }
 
       let result;
-      if (req.user?.role === 'TENANT_OWNER' || req.user?.role === 'SUPER_ADMIN') {
-        result = await this.service.listForTenant(tenantId);
+      if (req.user?.role === 'BUSINESS_OWNER' || req.user?.role === 'SUPER_ADMIN') {
+        result = await this.service.listForBusiness(businessId);
       } else {
         result = await this.service.listForUser(userId);
       }

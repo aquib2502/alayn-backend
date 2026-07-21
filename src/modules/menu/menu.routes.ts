@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { MenuController } from './menu.controller';
 import { InventoryController } from '../inventory/inventory.controller';
 import { authMiddleware } from '../../middleware/auth.middleware';
-import { tenantMiddleware } from '../../middleware/tenant.middleware';
+import { businessMiddleware } from '../../middleware/business.middleware';
 import { authorize } from '../../middleware/role.middleware';
 import { validate } from '../../middleware/validate.middleware';
 import { createCategorySchema, createMenuItemSchema } from './menu.schema';
@@ -12,13 +12,13 @@ const controller = new MenuController();
 const inventoryController = new InventoryController();
 
 // Public/logged-in menu fetch
-router.get('/', authMiddleware, tenantMiddleware, controller.getPublicMenu);
+router.get('/', authMiddleware, businessMiddleware, controller.getPublicMenu);
 
 // Category and item management (OWNER & MANAGER)
-router.post('/categories', authMiddleware, tenantMiddleware, authorize('TENANT_OWNER', 'MANAGER'), validate({ body: createCategorySchema }), controller.createCategory);
-router.post('/items', authMiddleware, tenantMiddleware, authorize('TENANT_OWNER', 'MANAGER'), validate({ body: createMenuItemSchema }), controller.createMenuItem);
+router.post('/categories', authMiddleware, businessMiddleware, authorize('BUSINESS_OWNER', 'MANAGER'), validate({ body: createCategorySchema }), controller.createCategory);
+router.post('/items', authMiddleware, businessMiddleware, authorize('BUSINESS_OWNER', 'MANAGER'), validate({ body: createMenuItemSchema }), controller.createMenuItem);
 
 // Menu item costing (OWNER & MANAGER)
-router.get('/items/:id/cost', authMiddleware, tenantMiddleware, authorize('TENANT_OWNER', 'MANAGER'), inventoryController.getMenuItemCost);
+router.get('/items/:id/cost', authMiddleware, businessMiddleware, authorize('BUSINESS_OWNER', 'MANAGER'), inventoryController.getMenuItemCost);
 
 export default router;

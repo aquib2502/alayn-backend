@@ -2,7 +2,7 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { TicketController } from './ticket.controller';
 import { authMiddleware } from '../../middleware/auth.middleware';
-import { tenantMiddleware } from '../../middleware/tenant.middleware';
+import { businessMiddleware } from '../../middleware/business.middleware';
 import { authorize } from '../../middleware/role.middleware';
 import { validate } from '../../middleware/validate.middleware';
 import { createFeedbackSchema, createStaffQuerySchema, updateTicketStatusSchema } from './ticket.schema';
@@ -26,30 +26,30 @@ const feedbackLimiter = rateLimit({
 // 1. Customer Feedback (Public, rate-limited)
 router.post('/feedback', feedbackLimiter, validate({ body: createFeedbackSchema }), controller.createFeedback);
 
-// 2. Staff Queries (Requires auth & tenant)
+// 2. Staff Queries (Requires auth & business)
 router.post(
   '/staff-queries',
   authMiddleware,
-  tenantMiddleware,
-  authorize('TENANT_OWNER', 'MANAGER', 'STAFF', 'KITCHEN'),
+  businessMiddleware,
+  authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF', 'KITCHEN'),
   validate({ body: createStaffQuerySchema }),
   controller.createStaffQuery
 );
 
-// 3. Tickets Management (Requires auth, tenant, OWNER or MANAGER)
+// 3. Tickets Management (Requires auth, business, OWNER or MANAGER)
 router.get(
   '/tickets',
   authMiddleware,
-  tenantMiddleware,
-  authorize('TENANT_OWNER', 'MANAGER'),
+  businessMiddleware,
+  authorize('BUSINESS_OWNER', 'MANAGER'),
   controller.list
 );
 
 router.patch(
   '/tickets/:id',
   authMiddleware,
-  tenantMiddleware,
-  authorize('TENANT_OWNER', 'MANAGER'),
+  businessMiddleware,
+  authorize('BUSINESS_OWNER', 'MANAGER'),
   validate({ body: updateTicketStatusSchema }),
   controller.updateStatus
 );

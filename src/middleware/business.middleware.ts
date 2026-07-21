@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma';
 import { AppError } from '../utils/AppError';
 
-export async function tenantMiddleware(req: Request, res: Response, next: NextFunction) {
+export async function businessMiddleware(req: Request, res: Response, next: NextFunction) {
   if (!req.user) {
     return next(new AppError('UNAUTHORIZED', 'Authentication required', 401));
   }
@@ -18,20 +18,20 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
   }
 
   try {
-    // 1. Verify the outlet belongs to the user's tenant
+    // 1. Verify the outlet belongs to the user's business
     const outlet = await prisma.outlet.findFirst({
       where: {
         id: outletId,
-        tenantId: req.user.tenantId || undefined,
+        businessId: req.user.businessId || undefined,
       },
     });
 
     if (!outlet) {
-      return next(new AppError('FORBIDDEN', 'Access to this outlet is denied or does not exist under your tenant', 403));
+      return next(new AppError('FORBIDDEN', 'Access to this outlet is denied or does not exist under your business', 403));
     }
 
-    // 2. Tenant Owners and Super Admins have access to all outlets under their tenant
-    if (req.user.role === 'TENANT_OWNER' || req.user.role === 'SUPER_ADMIN') {
+    // 2. Business Owners and Super Admins have access to all outlets under their business
+    if (req.user.role === 'BUSINESS_OWNER' || req.user.role === 'SUPER_ADMIN') {
       req.outletId = outletId;
       return next();
     }
@@ -57,4 +57,4 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
   }
 }
 
-export default tenantMiddleware;
+export default businessMiddleware;

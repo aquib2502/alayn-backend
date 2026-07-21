@@ -10,7 +10,7 @@ const controller = new OutletController();
 
 router.use(authMiddleware);
 
-router.post('/', authorize('TENANT_OWNER', 'SUPER_ADMIN'), validate({ body: createOutletSchema }), controller.create);
+router.post('/', authorize('BUSINESS_OWNER', 'SUPER_ADMIN'), validate({ body: createOutletSchema }), controller.create);
 router.get('/', controller.list);
 
 export default router;

@@ -11,23 +11,23 @@ export class AuthService {
     return crypto.createHash('sha256').update(token).digest('hex');
   }
 
-  private generateUserAccessToken(user: { id: string; email: string; role: string; name: string; tenantId?: string | null }) {
+  private generateUserAccessToken(user: { id: string; email: string; role: string; name: string; businessId?: string | null }) {
     return generateToken({
       id: user.id,
       email: user.email,
       role: user.role,
       name: user.name,
-      tenantId: user.tenantId,
+      businessId: user.businessId,
     });
   }
 
-  private generateUserRefreshToken(user: { id: string; email: string; role: string; name: string; tenantId?: string | null }) {
+  private generateUserRefreshToken(user: { id: string; email: string; role: string; name: string; businessId?: string | null }) {
     return generateRefreshToken({
       id: user.id,
       email: user.email,
       role: user.role,
       name: user.name,
-      tenantId: user.tenantId,
+      businessId: user.businessId,
     });
   }
 
@@ -39,7 +39,7 @@ export class AuthService {
       password: string;
       phoneNo: string;
     };
-    tenant: {
+    business: {
       name: string;
       locationsCount: string;
       businessType: string;
@@ -64,7 +64,7 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(data.user.password, 10);
 
     // Create Owner
-    const { user, tenant } =
+    const { user, business } =
       await this.authRepository.registerOwner({
         user: {
           name: data.user.name,
@@ -73,11 +73,11 @@ export class AuthService {
           phoneNo: data.user.phoneNo,
         },
 
-        tenant: {
-          name: data.tenant.name,
-          locationsCount: data.tenant.locationsCount,
-          businessType: data.tenant.businessType,
-          contactDetail: data.tenant.contactDetail,
+        business: {
+          name: data.business.name,
+          locationsCount: data.business.locationsCount,
+          businessType: data.business.businessType,
+          contactDetail: data.business.contactDetail,
         },
       });
 
@@ -91,9 +91,9 @@ export class AuthService {
         role: user.role,
       },
 
-      tenant: {
-        id: tenant.id,
-        name: tenant.name,
+      business: {
+        id: business.id,
+        name: business.name,
       },
     };
   }
@@ -124,7 +124,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
-        tenant: user.tenant,
+        business: user.business,
       },
     };
   }
@@ -160,7 +160,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
-        tenant: user.tenant,
+        business: user.business,
       },
     };
   }
@@ -180,7 +180,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
       role: user.role,
-      tenant: user.tenant,
+      business: user.business,
     };
   }
 }

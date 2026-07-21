@@ -3,18 +3,18 @@ import { OutletRepository } from './outlet.repository';
 export class OutletService {
   private repository = new OutletRepository();
 
-  async create(tenantId: string, userId: string, data: {
+  async create(businessId: string, userId: string, data: {
     name: string;
     address: string;
     city: string;
     state: string;
     country: string;
   }) {
-    return this.repository.createOutlet(tenantId, userId, data);
+    return this.repository.createOutlet(businessId, userId, data);
   }
 
-  async listForTenant(tenantId: string) {
-    return this.repository.getOutletsByTenant(tenantId);
+  async listForBusiness(businessId: string) {
+    return this.repository.getOutletsByBusiness(businessId);
   }
 
   async listForUser(userId: string) {

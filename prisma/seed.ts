@@ -9,8 +9,8 @@ async function main() {
   // Hash passwords
   const passwordHash = bcrypt.hashSync('password123', 10);
 
-  // 1. Create Tenant
-  const tenant = await prisma.tenant.create({
+  // 1. Create Business
+  const business = await prisma.business.create({
     data: {
       name: 'Central Alayn Group',
     },
@@ -19,7 +19,7 @@ async function main() {
   // 1.1 Create Subscription
   await prisma.subscription.create({
     data: {
-      tenantId: tenant.id,
+      businessId: business.id,
       status: 'ACTIVE',
       planId: 'BASIC',
       currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -29,7 +29,7 @@ async function main() {
   // 1.2 Create Outlets
   const outletA = await prisma.outlet.create({
     data: {
-      tenantId: tenant.id,
+      businessId: business.id,
       name: 'Central Alayn (Outlet A)',
       address: '123 Main Street, Cityville',
       cgstRateDecimal: 9.0,
@@ -39,7 +39,7 @@ async function main() {
 
   const outletB = await prisma.outlet.create({
     data: {
-      tenantId: tenant.id,
+      businessId: business.id,
       name: 'North Alayn (Outlet B)',
       address: '456 North Avenue, Townsville',
       cgstRateDecimal: 9.0,
@@ -52,17 +52,17 @@ async function main() {
   // 2. Create Users
   const ownerUser = await prisma.user.create({
     data: {
-      tenantId: tenant.id,
+      businessId: business.id,
       email: 'owner@alayn.com',
       passwordHash,
       name: 'John Owner',
-      role: Role.TENANT_OWNER,
+      role: Role.BUSINESS_OWNER,
     },
   });
 
   const managerUser = await prisma.user.create({
     data: {
-      tenantId: tenant.id,
+      businessId: business.id,
       email: 'manager@alayn.com',
       passwordHash,
       name: 'Jane Manager',
@@ -72,7 +72,7 @@ async function main() {
 
   const staffUser = await prisma.user.create({
     data: {
-      tenantId: tenant.id,
+      businessId: business.id,
       email: 'staff@alayn.com',
       passwordHash,
       name: 'Sam Staff',
@@ -82,7 +82,7 @@ async function main() {
 
   const kitchenUser = await prisma.user.create({
     data: {
-      tenantId: tenant.id,
+      businessId: business.id,
       email: 'kitchen@alayn.com',
       passwordHash,
       name: 'Kevin Kitchen',

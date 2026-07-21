@@ -33,7 +33,7 @@ export class EmployeeService {
   }
 
   async addDocument(outletId: string, employeeId: string, name: string, fileUrl: string, mimeType: string, sizeBytes: number) {
-    // Verify employee belongs to tenant
+    // Verify employee belongs to business
     await this.getEmployeeById(outletId, employeeId);
     return this.employeeRepository.addDocument(employeeId, name, fileUrl, mimeType, sizeBytes);
   }

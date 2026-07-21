@@ -11,7 +11,7 @@ export class AuthRepository {
       phoneNo: string;
     };
 
-    tenant: {
+    business: {
       name: string;
       locationsCount: string;
       businessType: string;
@@ -21,14 +21,14 @@ export class AuthRepository {
 
     return prisma.$transaction(async (tx) => {
 
-      // 1. Create Tenant
+      // 1. Create Business
 
-      const tenant = await tx.tenant.create({
+      const business = await tx.business.create({
         data: {
-          name: data.tenant.name,
-          locationsCount: data.tenant.locationsCount,
-          businessType: data.tenant.businessType,
-          contactDetail: data.tenant.contactDetail,
+          name: data.business.name,
+          locationsCount: data.business.locationsCount,
+          businessType: data.business.businessType,
+          contactDetail: data.business.contactDetail,
         },
       });
 
@@ -36,17 +36,17 @@ export class AuthRepository {
 
       const user = await tx.user.create({
         data: {
-          tenantId: tenant.id,
+          businessId: business.id,
           name: data.user.name,
           email: data.user.email,
           passwordHash: data.user.passwordHash,
           phoneNo: data.user.phoneNo,
-          role: Role.TENANT_OWNER,
+          role: Role.BUSINESS_OWNER,
         },
       });
 
       return {
-        tenant,
+        business,
         user,
       };
     });
@@ -61,7 +61,7 @@ export class AuthRepository {
         deletedAt: null,
       },
       include: {
-        tenant: {
+        business: {
           include: {
             subscription: true,
           },
@@ -77,7 +77,7 @@ export class AuthRepository {
         deletedAt: null,
       },
       include: {
-        tenant: {
+        business: {
           include: {
             subscription: true,
           },
@@ -102,7 +102,7 @@ export class AuthRepository {
       include: {
         user: {
           include: {
-            tenant: {
+            business: {
               include: {
                 subscription: true,
               },

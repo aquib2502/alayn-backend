@@ -6,15 +6,15 @@ import { AppError } from '../utils/AppError';
 export interface UserPayload {
   id: string;
   email: string;
-  role: 'SUPER_ADMIN' | 'TENANT_OWNER' | 'MANAGER' | 'STAFF' | 'KITCHEN';
+  role: 'SUPER_ADMIN' | 'BUSINESS_OWNER' | 'MANAGER' | 'STAFF' | 'KITCHEN';
   name: string;
-  tenantId?: string | null;
+  businessId?: string | null;
 }
 
 export interface AuthenticatedRequest extends Request {
   user?: UserPayload;
   outletId?: string;
-  tenantId?: string;
+  businessId?: string;
 }
 
 // Extend Express Request interface globally
@@ -23,7 +23,7 @@ declare global {
     interface Request {
       user?: UserPayload;
       outletId?: string;
-      tenantId?: string;
+      businessId?: string;
     }
   }
 }
@@ -45,8 +45,8 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET) as UserPayload;
     req.user = decoded;
-    if (decoded.tenantId) {
-      req.tenantId = decoded.tenantId;
+    if (decoded.businessId) {
+      req.businessId = decoded.businessId;
     }
     next();
   } catch (error) {

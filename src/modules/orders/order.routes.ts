@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
 import { OrderController } from './order.controller';
 import { authMiddleware } from '../../middleware/auth.middleware';
-import { tenantMiddleware } from '../../middleware/tenant.middleware';
+import { businessMiddleware } from '../../middleware/business.middleware';
 import { authorize } from '../../middleware/role.middleware';
 import { validate } from '../../middleware/validate.middleware';
 import { createOrderSchema, updateOrderStatusSchema, createPaymentSchema } from './order.schema';
@@ -26,13 +26,13 @@ const router = Router();
 const controller = new OrderController();
 
 // Flexible auth middleware for ordering:
-// If Bearer token is passed, authenticate user and check tenant.
+// If Bearer token is passed, authenticate user and check business.
 // If not, allow only if request source is QR and has valid TableToken.
 async function flexibleOrderAuth(req: Request, res: Response, next: NextFunction) {
   if (req.headers.authorization) {
     return authMiddleware(req, res, (err) => {
       if (err) return next(err);
-      return tenantMiddleware(req, res, next);
+      return businessMiddleware(req, res, next);
     });
   }
 
@@ -71,14 +71,14 @@ router.get('/tables/:token/menu', qrLimiter, controller.getTableMenu);
 router.post('/', flexibleOrderAuth, validate({ body: createOrderSchema }), controller.create);
 
 // 3. Management routes (require full user auth)
-router.patch('/:id/status', authMiddleware, tenantMiddleware, authorize('TENANT_OWNER', 'MANAGER', 'STAFF', 'KITCHEN'), validate({ body: updateOrderStatusSchema }), controller.updateStatus);
-router.post('/:id/payments', authMiddleware, tenantMiddleware, authorize('TENANT_OWNER', 'MANAGER', 'STAFF'), validate({ body: createPaymentSchema }), controller.createPayment);
+router.patch('/:id/status', authMiddleware, businessMiddleware, authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF', 'KITCHEN'), validate({ body: updateOrderStatusSchema }), controller.updateStatus);
+router.post('/:id/payments', authMiddleware, businessMiddleware, authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF'), validate({ body: createPaymentSchema }), controller.createPayment);
 
 // Kitchen orders router
 const kitchenRouter = Router();
 kitchenRouter.use(authMiddleware);
-kitchenRouter.use(tenantMiddleware);
-kitchenRouter.get('/orders', authorize('TENANT_OWNER', 'MANAGER', 'KITCHEN'), controller.getKitchenOrders);
+kitchenRouter.use(businessMiddleware);
+kitchenRouter.get('/orders', authorize('BUSINESS_OWNER', 'MANAGER', 'KITCHEN'), controller.getKitchenOrders);
 
 export { kitchenRouter };
 export default router;

@@ -45,7 +45,7 @@ export class InventoryService {
   }
 
   async createRecipe(outletId: string, data: { menuItemId: string; itemId: string; quantityPerUnit: number }) {
-    // Verify item exists under tenant
+    // Verify item exists under business
     const item = await this.inventoryRepository.findItemById(outletId, data.itemId);
     if (!item) {
       throw new AppError('ITEM_NOT_FOUND', 'Inventory item not found', 404);

@@ -1,7 +1,7 @@
 import { prisma } from '../../config/prisma';
 
 export class OutletRepository {
-  async createOutlet(tenantId: string, userId: string, data: {
+  async createOutlet(businessId: string, userId: string, data: {
     name: string;
     address: string;
     city: string;
@@ -11,7 +11,7 @@ export class OutletRepository {
     return prisma.$transaction(async (tx) => {
       const outlet = await tx.outlet.create({
         data: {
-          tenantId,
+          businessId,
           ...data,
         },
       });
@@ -27,9 +27,9 @@ export class OutletRepository {
     });
   }
 
-  async getOutletsByTenant(tenantId: string) {
+  async getOutletsByBusiness(businessId: string) {
     return prisma.outlet.findMany({
-      where: { tenantId },
+      where: { businessId },
     });
   }
 

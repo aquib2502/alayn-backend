@@ -18,7 +18,7 @@ export const registerSchema = z.object({
     phoneNo: z.string().min(10),
   }),
 
-  tenant: z.object({
+  business: z.object({
     name: z.string().min(2),
     locationsCount: z.string().min(1),
     businessType: z.string().min(2),

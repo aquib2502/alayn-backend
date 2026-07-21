@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { EmployeeController } from './employee.controller';
 import { authMiddleware } from '../../middleware/auth.middleware';
-import { tenantMiddleware } from '../../middleware/tenant.middleware';
+import { businessMiddleware } from '../../middleware/business.middleware';
 import { authorize } from '../../middleware/role.middleware';
 import { validate } from '../../middleware/validate.middleware';
 import { createEmployeeSchema, updateEmployeeSchema, createLeaveRequestSchema, updateLeaveRequestStatusSchema } from './employee.schema';
@@ -53,24 +53,24 @@ const controller = new EmployeeController();
 
 // All routes require authentication & outlet scoping
 router.use(authMiddleware);
-router.use(tenantMiddleware);
+router.use(businessMiddleware);
 
 // Only OWNER & MANAGER can perform employee profile actions
-router.post('/', authorize('TENANT_OWNER', 'MANAGER'), validate({ body: createEmployeeSchema }), controller.create);
-router.get('/', authorize('TENANT_OWNER', 'MANAGER'), controller.list);
-router.patch('/:id', authorize('TENANT_OWNER', 'MANAGER'), validate({ body: updateEmployeeSchema }), controller.update);
-router.delete('/:id', authorize('TENANT_OWNER', 'MANAGER'), controller.delete);
+router.post('/', authorize('BUSINESS_OWNER', 'MANAGER'), validate({ body: createEmployeeSchema }), controller.create);
+router.get('/', authorize('BUSINESS_OWNER', 'MANAGER'), controller.list);
+router.patch('/:id', authorize('BUSINESS_OWNER', 'MANAGER'), validate({ body: updateEmployeeSchema }), controller.update);
+router.delete('/:id', authorize('BUSINESS_OWNER', 'MANAGER'), controller.delete);
 
 // Document upload route
-router.post('/:id/documents', authorize('TENANT_OWNER', 'MANAGER'), upload.single('document'), controller.uploadDocument);
+router.post('/:id/documents', authorize('BUSINESS_OWNER', 'MANAGER'), upload.single('document'), controller.uploadDocument);
 
 // Leave Requests Router
 const leaveRouter = Router();
 leaveRouter.use(authMiddleware);
-leaveRouter.use(tenantMiddleware);
+leaveRouter.use(businessMiddleware);
 
-leaveRouter.post('/', authorize('TENANT_OWNER', 'MANAGER', 'STAFF'), validate({ body: createLeaveRequestSchema }), controller.createLeave);
-leaveRouter.patch('/:id', authorize('TENANT_OWNER', 'MANAGER'), validate({ body: updateLeaveRequestStatusSchema }), controller.updateLeaveStatus);
+leaveRouter.post('/', authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF'), validate({ body: createLeaveRequestSchema }), controller.createLeave);
+leaveRouter.patch('/:id', authorize('BUSINESS_OWNER', 'MANAGER'), validate({ body: updateLeaveRequestStatusSchema }), controller.updateLeaveStatus);
 
 export { leaveRouter };
 export default router;
