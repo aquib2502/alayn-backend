@@ -59,5 +59,36 @@ export class ShiftController {
       next(error);
     }
   };
+
+  getEmployeeRoster = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { employeeId } = req.params;
+      const result = await this.shiftService.getEmployeeRoster(employeeId);
+      return sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getOutletRosters = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const outletId = req.outletId!;
+      const result = await this.shiftService.getOutletRosters(outletId);
+      return sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  setWeeklyRoster = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const outletId = req.outletId!;
+      const { employeeId, weeklySchedule } = req.body;
+      const result = await this.shiftService.setWeeklyRoster(outletId, employeeId, weeklySchedule);
+      return sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 export default ShiftController;

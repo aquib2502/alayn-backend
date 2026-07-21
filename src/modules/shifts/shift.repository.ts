@@ -101,5 +101,45 @@ export class ShiftRepository {
       data: { employeeId },
     });
   }
+
+  async findEmployeeRoster(employeeId: string) {
+    return prisma.employeeRoster.findMany({
+      where: { employeeId },
+      include: {
+        shift: true,
+      },
+    });
+  }
+
+  async findOutletRosters(outletId: string) {
+    return prisma.employeeRoster.findMany({
+      where: { outletId },
+      include: {
+        employee: true,
+        shift: true,
+      },
+    });
+  }
+
+  async upsertEmployeeRoster(outletId: string, employeeId: string, dayOfWeek: any, shiftId: string | null) {
+    return prisma.employeeRoster.upsert({
+      where: {
+        employeeId_dayOfWeek: {
+          employeeId,
+          dayOfWeek,
+        },
+      },
+      update: {
+        shiftId,
+        outletId,
+      },
+      create: {
+        employeeId,
+        dayOfWeek,
+        shiftId,
+        outletId,
+      },
+    });
+  }
 }
 export default ShiftRepository;

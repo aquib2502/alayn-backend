@@ -50,5 +50,36 @@ export class AttendanceRepository {
       },
     });
   }
+
+  async findOutletHoliday(outletId: string, date: Date) {
+    return prisma.outletHoliday.findUnique({
+      where: {
+        outletId_date: {
+          outletId,
+          date,
+        },
+      },
+    });
+  }
+
+  async findOutlet(outletId: string) {
+    return prisma.outlet.findUnique({
+      where: { id: outletId },
+    });
+  }
+
+  async findEmployeeRoster(employeeId: string, dayOfWeek: any) {
+    return prisma.employeeRoster.findUnique({
+      where: {
+        employeeId_dayOfWeek: {
+          employeeId,
+          dayOfWeek,
+        },
+      },
+      include: {
+        shift: true,
+      },
+    });
+  }
 }
 export default AttendanceRepository;

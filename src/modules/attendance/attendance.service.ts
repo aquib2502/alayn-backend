@@ -21,6 +21,35 @@ export class AttendanceService {
     const now = new Date();
     const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
+    // 1. Check Outlet Holiday
+    const holiday = await this.attendanceRepository.findOutletHoliday(outletId, date);
+    if (holiday) {
+      throw new AppError('HOLIDAY_CLOSED', `Cannot clock in: Today is an official holiday (${holiday.name}).`, 400);
+    }
+
+    // 2. Check Outlet Operating Days
+    const outlet = await this.attendanceRepository.findOutlet(outletId);
+    if (outlet && outlet.operatingDays) {
+      try {
+        const operatingDaysArr: string[] = JSON.parse(outlet.operatingDays);
+        const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+        const currentDayName = dayNames[now.getDay()];
+        if (!operatingDaysArr.includes(currentDayName)) {
+          throw new AppError('OUTLET_CLOSED', `Cannot clock in: The outlet is closed on ${currentDayName}s.`, 400);
+        }
+      } catch (err: any) {
+        if (err instanceof AppError) throw err;
+      }
+    }
+
+    // 3. Check Employee Roster Weekly Off
+    const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+    const currentDayName = dayNames[now.getDay()];
+    const roster = await this.attendanceRepository.findEmployeeRoster(employeeId, currentDayName);
+    if (roster && roster.shiftId === null) {
+      throw new AppError('WEEKLY_OFF', 'Cannot clock in: Today is your scheduled weekly off.', 400);
+    }
+
     return this.attendanceRepository.createAttendance(outletId, employeeId, date, now);
   }
 

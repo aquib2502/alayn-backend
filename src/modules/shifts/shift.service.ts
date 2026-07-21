@@ -157,5 +157,31 @@ export class ShiftService {
       });
     });
   }
+
+  async getEmployeeRoster(employeeId: string) {
+    return this.shiftRepository.findEmployeeRoster(employeeId);
+  }
+
+  async getOutletRosters(outletId: string) {
+    return this.shiftRepository.findOutletRosters(outletId);
+  }
+
+  async setWeeklyRoster(
+    outletId: string,
+    employeeId: string,
+    weeklySchedule: Array<{ dayOfWeek: string; shiftId: string | null }>
+  ) {
+    const results = [];
+    for (const item of weeklySchedule) {
+      const updated = await this.shiftRepository.upsertEmployeeRoster(
+        outletId,
+        employeeId,
+        item.dayOfWeek as any,
+        item.shiftId
+      );
+      results.push(updated);
+    }
+    return results;
+  }
 }
 export default ShiftService;
