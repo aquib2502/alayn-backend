@@ -253,6 +253,7 @@ model Employee {
   id          String         @id @default(uuid()) @db.Uuid
   outletId    String         @db.Uuid
   userId      String?        @db.Uuid
+  email       String?
   name        String
   phone       String
   role        Role
@@ -548,6 +549,7 @@ model MenuItem {
   imageUrl    String?
   pricePaise  Int
   categoryId  String    @db.Uuid
+  isVeg       Boolean   @default(true)
   isActive    Boolean   @default(true)
   outletId    String    @db.Uuid
   createdAt   DateTime  @default(now())

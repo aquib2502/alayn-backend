@@ -5,6 +5,12 @@ export class EmployeeService {
   private employeeRepository = new EmployeeRepository();
 
   async createEmployee(outletId: string, data: any) {
+    if (!data.name || !data.phone || !data.role) {
+      throw new AppError('VALIDATION_ERROR', 'Name, phone, and role are required', 400);
+    }
+    if (!data.email || !data.password) {
+      throw new AppError('VALIDATION_ERROR', 'Email and password are required to create an employee login account', 400);
+    }
     return this.employeeRepository.create(outletId, data);
   }
 

@@ -31,7 +31,6 @@ const setTokenCookies = (res: Response, token: string, refreshToken?: string): v
 export class AuthController {
   private authService = new AuthService();
 
-
   register = async (
     req: Request,
     res: Response,
@@ -39,7 +38,6 @@ export class AuthController {
   ) => {
     try {
       const result = await this.authService.register(req.body);
-
       return sendSuccess(res, result);
     } catch (error) {
       next(error);
@@ -56,6 +54,8 @@ export class AuthController {
       return sendSuccess(res, {
         message: 'Login successful',
         user: result.user,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
       });
     } catch (error) {
       next(error);
@@ -64,9 +64,19 @@ export class AuthController {
 
   refresh = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const refreshToken = req.cookies?.refreshToken;
+      const refreshToken =
+        req.cookies?.refreshToken ||
+        req.body?.refreshToken ||
+        (req.headers['x-refresh-token'] as string);
+
       if (!refreshToken) {
-        return res.status(401).json({ error: 'Refresh token required' });
+        return res.status(401).json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'No refresh token provided',
+          },
+        });
       }
 
       const result = await this.authService.refresh(refreshToken);
@@ -74,6 +84,8 @@ export class AuthController {
 
       return sendSuccess(res, {
         message: 'Token refreshed successfully',
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
         user: result.user,
       });
     } catch (error) {
@@ -83,7 +95,11 @@ export class AuthController {
 
   logout = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const refreshToken = req.cookies?.refreshToken;
+      const refreshToken =
+        req.cookies?.refreshToken ||
+        req.body?.refreshToken ||
+        (req.headers['x-refresh-token'] as string);
+
       if (refreshToken) {
         await this.authService.logout(refreshToken);
       }
@@ -118,4 +134,5 @@ export class AuthController {
     }
   };
 }
+
 export default AuthController;

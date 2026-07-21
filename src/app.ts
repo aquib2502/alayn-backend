@@ -10,7 +10,11 @@ import { swaggerDocument } from './config/swagger';
 const app = express();
 
 // Security Middlewares
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 app.use(cors({
   origin: [
     "http://localhost:3000",
@@ -24,6 +28,19 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Serve Static Uploads
+import path from 'path';
+app.use(
+  '/uploads',
+  cors(),
+  express.static(path.resolve(__dirname, '../uploads'), {
+    setHeaders: (res) => {
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    },
+  })
+);
 
 // Swagger UI Documentation
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
