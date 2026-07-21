@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { AuthRepository } from './auth.repository';
 import { AppError } from '../../utils/AppError';
-import { generateToken, generateRefreshToken } from '../../utils/jwt';
+import { generateToken, generateRefreshToken, verifyRefreshToken } from '../../utils/jwt';
 
 export class AuthService {
   private authRepository = new AuthRepository();
@@ -137,14 +137,27 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string) {
+    const decoded = verifyRefreshToken(refreshToken);
+    if (!decoded) {
+      console.warn('[AUTH REFRESH SERVICE] JWT verifyRefreshToken failed. Token signature is invalid or expired.');
+      throw new AppError('INVALID_TOKEN', 'Refresh token JWT verification failed or expired', 401);
+    }
+
     const refreshHash = this.hashToken(refreshToken);
     const tokenRecord = await this.authRepository.findRefreshToken(refreshHash);
 
     if (!tokenRecord) {
-      throw new AppError('INVALID_TOKEN', 'Refresh token is invalid', 401);
+      console.warn('[AUTH REFRESH SERVICE] Refresh token hash not found in database records.', {
+        refreshHashPrefix: refreshHash.substring(0, 10),
+      });
+      throw new AppError('INVALID_TOKEN', 'Refresh token is invalid or has been revoked', 401);
     }
 
     if (new Date() > tokenRecord.expiresAt) {
+      console.warn('[AUTH REFRESH SERVICE] Refresh token record in database has expired.', {
+        expiresAt: tokenRecord.expiresAt,
+        now: new Date(),
+      });
       await this.authRepository.deleteRefreshToken(refreshHash);
       throw new AppError('EXPIRED_TOKEN', 'Refresh token has expired', 401);
     }

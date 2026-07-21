@@ -10,6 +10,15 @@ export class PurchaseOrderService {
     return this.poRepository.createSupplier(outletId, data);
   }
 
+  async getSuppliers(outletId: string) {
+    return this.poRepository.findSuppliers(outletId);
+  }
+
+  async getPurchaseOrders(outletId: string) {
+    return this.poRepository.findPOs(outletId);
+  }
+
+
   async createPO(outletId: string, supplierId: string, items: { itemId: string; orderedQuantity: number; unitCostPaise: number }[]) {
     const supplier = await this.poRepository.findSupplierById(outletId, supplierId);
     if (!supplier) {

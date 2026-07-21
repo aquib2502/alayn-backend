@@ -31,12 +31,14 @@ export class InventoryController {
       const outletId = req.outletId!;
       const { id } = req.params;
       const { change, reason } = req.body;
-      const result = await this.inventoryService.adjustStock(outletId, id, change, reason);
+      const loggedById = (req as any).user?.id;
+      const result = await this.inventoryService.adjustStock(outletId, id, change, reason, undefined, loggedById);
       return sendSuccess(res, result, 201);
     } catch (error) {
       next(error);
     }
   };
+
 
   createRecipe = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -59,5 +61,26 @@ export class InventoryController {
       next(error);
     }
   };
+
+  list = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const outletId = req.outletId!;
+      const result = await this.inventoryService.getAllItems(outletId);
+      return sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getAlerts = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const outletId = req.outletId!;
+      const result = await this.inventoryService.getAlerts(outletId);
+      return sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 export default InventoryController;
+

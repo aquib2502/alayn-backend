@@ -11,6 +11,7 @@ const setTokenCookies = (res: Response, token: string, refreshToken?: string): v
     httpOnly: true,
     secure: isProduction,
     sameSite: 'lax' as const,
+    path: '/',
     domain: isProduction ? '.alaynai.com' : undefined,
   };
 
@@ -20,7 +21,7 @@ const setTokenCookies = (res: Response, token: string, refreshToken?: string): v
   });
 
   if (refreshToken) {
-    const refreshMaxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+    const refreshMaxAge = (isProduction ? 15 : 30) * 24 * 60 * 60 * 1000; // 15 days in prod, 30 days in dev
     res.cookie('refreshToken', refreshToken, {
       ...cookieOptions,
       maxAge: refreshMaxAge,
@@ -70,6 +71,13 @@ export class AuthController {
         (req.headers['x-refresh-token'] as string);
 
       if (!refreshToken) {
+        console.warn('[AUTH REFRESH FAILED] No refresh token provided in cookies, body, or headers.', {
+          cookiesReceived: req.cookies ? Object.keys(req.cookies) : [],
+          headersReceived: {
+            cookie: req.headers.cookie ? 'PRESENT' : 'ABSENT',
+            'x-refresh-token': req.headers['x-refresh-token'] ? 'PRESENT' : 'ABSENT',
+          },
+        });
         return res.status(401).json({
           success: false,
           error: {
@@ -88,7 +96,13 @@ export class AuthController {
         refreshToken: result.refreshToken,
         user: result.user,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('[AUTH REFRESH ERROR]', {
+        message: error?.message || error,
+        code: error?.code || 'UNKNOWN_REFRESH_ERROR',
+        stack: error?.stack,
+        cookies: req.cookies ? Object.keys(req.cookies) : [],
+      });
       next(error);
     }
   };

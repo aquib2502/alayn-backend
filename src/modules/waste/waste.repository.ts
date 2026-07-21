@@ -12,10 +12,27 @@ export class WasteRepository {
       }),
       prisma.wasteLog.count({ where }),
     ]);
-    return { data, total };
+
+    // Fetch items for the waste logs
+    const itemIds = Array.from(new Set(data.map((log) => log.itemId)));
+    const items = await prisma.item.findMany({
+      where: { id: { in: itemIds } },
+    });
+    const itemMap = new Map(items.map((i) => [i.id, i]));
+
+    const mappedData = data.map((log) => ({
+      ...log,
+      quantity: log.quantity.toNumber(),
+      item: itemMap.get(log.itemId) || null,
+    }));
+
+    return { data: mappedData, total };
   }
 
   async getWasteSummary(outletId: string) {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
     const aggregate = await prisma.wasteLog.groupBy({
       by: ['reason'],
       where: { outletId },
@@ -28,12 +45,30 @@ export class WasteRepository {
       },
     });
 
-    return aggregate.map((group) => ({
+    const currentMonthAggregate = await prisma.wasteLog.aggregate({
+      where: {
+        outletId,
+        createdAt: { gte: startOfMonth },
+      },
+      _sum: {
+        costAtLoggingPaise: true,
+      },
+    });
+
+    const currentMonthWastePaise = currentMonthAggregate._sum.costAtLoggingPaise || 0;
+
+    const byReason = aggregate.map((group) => ({
       reason: group.reason,
       count: group._count.id,
       totalQuantity: group._sum.quantity ? group._sum.quantity.toNumber() : 0,
       totalCostPaise: group._sum.costAtLoggingPaise || 0,
     }));
+
+    return {
+      currentMonthWastePaise,
+      byReason,
+    };
   }
 }
 export default WasteRepository;
+
