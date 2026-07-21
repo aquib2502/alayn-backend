@@ -15,6 +15,16 @@ export class ShiftController {
     }
   };
 
+  list = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const outletId = req.outletId!;
+      const result = await this.shiftService.getShifts(outletId);
+      return sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   assign = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const outletId = req.outletId!;

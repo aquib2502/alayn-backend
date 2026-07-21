@@ -69,6 +69,7 @@ const leaveRouter = Router();
 leaveRouter.use(authMiddleware);
 leaveRouter.use(businessMiddleware);
 
+leaveRouter.get('/', authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF', 'KITCHEN'), controller.listLeaves);
 leaveRouter.post('/', authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF'), validate({ body: createLeaveRequestSchema }), controller.createLeave);
 leaveRouter.patch('/:id', authorize('BUSINESS_OWNER', 'MANAGER'), validate({ body: updateLeaveRequestStatusSchema }), controller.updateLeaveStatus);
 

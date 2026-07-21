@@ -9,6 +9,10 @@ export class ShiftService {
     return this.shiftRepository.createShift(outletId, data);
   }
 
+  async getShifts(outletId: string) {
+    return this.shiftRepository.findShifts(outletId);
+  }
+
   async assignShift(outletId: string, shiftId: string, employeeId: string, date: Date) {
     // 1. Load shift details
     const targetShift = await this.shiftRepository.findShiftById(outletId, shiftId);

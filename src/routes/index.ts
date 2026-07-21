@@ -10,6 +10,7 @@ import menuRoutes from '../modules/menu/menu.routes';
 import orderRoutes, { kitchenRouter } from '../modules/orders/order.routes';
 import wasteRoutes from '../modules/waste/waste.routes';
 import analyticsRoutes from '../modules/analytics/analytics.routes';
+import dashboardRoutes from '../modules/analytics/dashboard.routes';
 import ticketRoutes from '../modules/tickets/ticket.routes';
 
 const router = Router();
@@ -28,6 +29,7 @@ router.use('/orders', orderRoutes);
 router.use('/kitchen', kitchenRouter);
 router.use('/waste-logs', wasteRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/dashboard', dashboardRoutes);
 
 // Bind ticket, feedback, and staff query routes
 router.use('/', ticketRoutes);

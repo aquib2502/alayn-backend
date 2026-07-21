@@ -528,6 +528,7 @@ model MenuCategory {
   id          String    @id @default(uuid()) @db.Uuid
   name        String
   description String
+  imageUrl    String?
   isActive    Boolean   @default(true)
   outletId    String    @db.Uuid
   createdAt   DateTime  @default(now())
@@ -544,6 +545,7 @@ model MenuItem {
   id          String    @id @default(uuid()) @db.Uuid
   name        String
   description String
+  imageUrl    String?
   pricePaise  Int
   categoryId  String    @db.Uuid
   isActive    Boolean   @default(true)
