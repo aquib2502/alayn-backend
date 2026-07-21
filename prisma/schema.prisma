@@ -549,6 +549,7 @@ model MenuItem {
   imageUrl    String?
   pricePaise  Int
   categoryId  String    @db.Uuid
+  isVeg       Boolean   @default(true)
   isActive    Boolean   @default(true)
   outletId    String    @db.Uuid
   createdAt   DateTime  @default(now())
