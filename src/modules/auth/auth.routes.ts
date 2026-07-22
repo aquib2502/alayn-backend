@@ -12,6 +12,9 @@ router.post(
     "/register",
     validate({ body: registerSchema }),
     controller.register
-); router.get('/me', authMiddleware, controller.me);
+);
+router.get('/me', authMiddleware, controller.me);
+router.patch('/profile', authMiddleware, controller.updateProfile);
+router.post('/change-password', authMiddleware, controller.changePassword);
 
 export default router;

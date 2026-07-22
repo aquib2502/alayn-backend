@@ -107,12 +107,12 @@ export class AuthService {
   async login(email: string, password: string) {
     const user = await this.authRepository.findUserByEmail(email);
     if (!user) {
-      throw new AppError('INVALID_CREDENTIALS', 'Invalid email or password', 401);
+      throw new AppError('USER_NOT_FOUND', 'User does not exist. Please sign up.', 404);
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
-      throw new AppError('INVALID_CREDENTIALS', 'Invalid email or password', 401);
+      throw new AppError('INVALID_CREDENTIALS', 'Incorrect password. Please try again.', 401);
     }
 
     const accessToken = this.generateUserAccessToken(user);
@@ -207,8 +207,54 @@ export class AuthService {
       email: user.email,
       name: user.name,
       role: user.role,
+      phoneNo: user.phoneNo,
+      createdAt: user.createdAt,
       business: user.business,
       businessOwner: user.businessOwner,
     };
+  }
+
+  async updateProfile(userId: string, data: { name?: string; phoneNo?: string }) {
+    const user = await this.authRepository.findUserById(userId);
+    if (!user) {
+      throw new AppError('USER_NOT_FOUND', 'User not found', 404);
+    }
+
+    const updatedUser = await this.authRepository.updateUser(userId, {
+      ...(data.name ? { name: data.name } : {}),
+      ...(data.phoneNo ? { phoneNo: data.phoneNo } : {}),
+    });
+
+    return {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      name: updatedUser.name,
+      role: updatedUser.role,
+      phoneNo: updatedUser.phoneNo,
+      createdAt: updatedUser.createdAt,
+      business: updatedUser.business,
+      businessOwner: updatedUser.businessOwner,
+    };
+  }
+
+  async changePassword(userId: string, oldPassword: string, newPassword: string) {
+    const user = await this.authRepository.findUserById(userId);
+    if (!user) {
+      throw new AppError('USER_NOT_FOUND', 'User not found', 404);
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
+    if (!isMatch) {
+      throw new AppError('INVALID_CREDENTIALS', 'Current password is incorrect', 400);
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      throw new AppError('INVALID_PASSWORD', 'New password must be at least 6 characters', 400);
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.authRepository.updatePassword(userId, passwordHash);
+
+    return { message: 'Password updated successfully' };
   }
 }

@@ -137,4 +137,26 @@ export class AuthRepository {
       where: { userId },
     });
   }
+
+  async updateUser(userId: string, data: { name?: string; phoneNo?: string }) {
+    return prisma.user.update({
+      where: { id: userId },
+      data,
+      include: {
+        business: {
+          include: {
+            subscription: true,
+          },
+        },
+        businessOwner: true,
+      },
+    });
+  }
+
+  async updatePassword(userId: string, passwordHash: string) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+  }
 }

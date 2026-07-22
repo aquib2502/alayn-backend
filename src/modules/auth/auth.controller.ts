@@ -142,6 +142,33 @@ export class AuthController {
       next(error);
     }
   };
+
+  updateProfile = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      const result = await this.authService.updateProfile(userId, req.body);
+      return sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  changePassword = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      const { oldPassword, newPassword } = req.body;
+      const result = await this.authService.changePassword(userId, oldPassword, newPassword);
+      return sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default AuthController;
