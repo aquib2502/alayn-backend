@@ -119,7 +119,8 @@ export class EmployeeRepository {
   }
 
   async findMany(outletId: string, limit: number, offset: number) {
-    const where = { outletId, deletedAt: null };
+    const isAll = !outletId || outletId === 'all';
+    const where = isAll ? { deletedAt: null } : { outletId, deletedAt: null };
     const [data, total] = await Promise.all([
       prisma.employee.findMany({
         where,
@@ -273,8 +274,10 @@ export class EmployeeRepository {
   }
 
   async findLeaveRequests(outletId: string) {
+    const isAll = !outletId || outletId === 'all';
+    const where = isAll ? {} : { outletId };
     return prisma.leaveRequest.findMany({
-      where: { outletId },
+      where,
       include: {
         employee: true,
       },

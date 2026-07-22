@@ -51,15 +51,19 @@ export class PurchaseOrderRepository {
   }
 
   async findSuppliers(outletId: string) {
+    const isAll = !outletId || outletId === 'all';
+    const where = isAll ? { deletedAt: null } : { outletId, deletedAt: null };
     return prisma.supplier.findMany({
-      where: { outletId, deletedAt: null },
+      where,
       orderBy: { name: 'asc' },
     });
   }
 
   async findPOs(outletId: string) {
+    const isAll = !outletId || outletId === 'all';
+    const where = isAll ? { deletedAt: null } : { outletId, deletedAt: null };
     return prisma.purchaseOrder.findMany({
-      where: { outletId, deletedAt: null },
+      where,
       include: {
         actualSupplier: true,
         items: {

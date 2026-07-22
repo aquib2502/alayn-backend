@@ -80,14 +80,18 @@ export class InventoryRepository {
   }
 
   async findManyItems(outletId: string) {
+    const isAll = !outletId || outletId === 'all';
+    const itemWhere = isAll ? { deletedAt: null } : { outletId, deletedAt: null };
+    const ledgerWhere = isAll ? {} : { outletId };
+
     const items = await prisma.item.findMany({
-      where: { outletId, deletedAt: null },
+      where: itemWhere,
       orderBy: { createdAt: 'desc' },
     });
 
     const ledgerAggregates = await prisma.stockLedgerEntry.groupBy({
       by: ['itemId'],
-      where: { outletId },
+      where: ledgerWhere,
       _sum: { change: true },
     });
 

@@ -67,14 +67,13 @@ export class OrderRepository {
   }
 
   async findKitchenOrders(outletId: string) {
+    const isAll = !outletId || outletId === 'all';
+    const where = isAll
+      ? { status: { in: ['RECEIVED', 'PREPARING', 'READY'] as any }, deletedAt: null }
+      : { outletId, status: { in: ['RECEIVED', 'PREPARING', 'READY'] as any }, deletedAt: null };
+
     return prisma.order.findMany({
-      where: {
-        outletId,
-        status: {
-          in: ['RECEIVED', 'PREPARING', 'READY'],
-        },
-        deletedAt: null,
-      },
+      where,
       include: {
         items: {
           include: {

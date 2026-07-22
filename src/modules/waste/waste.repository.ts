@@ -2,7 +2,8 @@ import { prisma } from '../../config/prisma';
 
 export class WasteRepository {
   async findMany(outletId: string, limit: number, offset: number) {
-    const where = { outletId };
+    const isAll = !outletId || outletId === 'all';
+    const where = isAll ? {} : { outletId };
     const [data, total] = await Promise.all([
       prisma.wasteLog.findMany({
         where,
@@ -30,12 +31,14 @@ export class WasteRepository {
   }
 
   async getWasteSummary(outletId: string) {
+    const isAll = !outletId || outletId === 'all';
+    const groupWhere = isAll ? {} : { outletId };
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const aggregate = await prisma.wasteLog.groupBy({
       by: ['reason'],
-      where: { outletId },
+      where: groupWhere,
       _sum: {
         quantity: true,
         costAtLoggingPaise: true,
@@ -45,11 +48,12 @@ export class WasteRepository {
       },
     });
 
+    const currentMonthWhere = isAll
+      ? { createdAt: { gte: startOfMonth } }
+      : { outletId, createdAt: { gte: startOfMonth } };
+
     const currentMonthAggregate = await prisma.wasteLog.aggregate({
-      where: {
-        outletId,
-        createdAt: { gte: startOfMonth },
-      },
+      where: currentMonthWhere,
       _sum: {
         costAtLoggingPaise: true,
       },
