@@ -126,6 +126,16 @@ enum DayOfWeek {
   SUNDAY
 }
 
+enum TableType {
+  AC
+  NON_AC
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+}
+
 model User {
   id           String        @id @default(uuid()) @db.Uuid
   businessId   String?       @db.Uuid
@@ -232,6 +242,7 @@ model Outlet {
   stockAlerts      StockAlert[]
   menuCategories   MenuCategory[]
   menuItems        MenuItem[]
+  tables           Table[]
   tableTokens      TableToken[]
   orders           Order[]
   wasteLogs        WasteLog[]
@@ -609,21 +620,41 @@ model MenuItem {
   @@index([outletId])
 }
 
+model Table {
+  id          String      @id @default(uuid()) @db.Uuid
+  tableNumber Int
+  tableType   TableType   @default(NON_AC)
+  status      TableStatus @default(AVAILABLE)
+  outletId    String      @db.Uuid
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+
+  outlet Outlet       @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  tokens TableToken[]
+
+  @@unique([outletId, tableNumber])
+  @@index([outletId])
+}
+
 model TableToken {
   id          String   @id @default(uuid()) @db.Uuid
   tableNumber Int
   token       String   @unique
   expiresAt   DateTime
   outletId    String   @db.Uuid
+  tableId     String?  @db.Uuid
   createdAt   DateTime @default(now())
 
   outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  table  Table? @relation(fields: [tableId], references: [id], onDelete: SetNull)
 
   @@index([outletId])
 }
 
 model Order {
   id            String      @id @default(uuid()) @db.Uuid
+  orderNumber   String?     @unique
   tableNumber   Int?
   source        OrderSource
   status        OrderStatus @default(RECEIVED)

@@ -2,6 +2,7 @@ import { prisma } from '../../config/prisma';
 
 export class OrderRepository {
   async createOrder(outletId: string, data: {
+    orderNumber?: string;
     tableNumber?: number;
     source: 'COUNTER' | 'QR' | 'DELIVERY';
     status: 'RECEIVED';
@@ -12,9 +13,10 @@ export class OrderRepository {
     totalPaise: number;
     items: { menuItemId: string; quantity: number; unitPricePaise: number; subtotalPaise: number }[];
   }) {
-    return prisma.order.create({
+    return (prisma as any).order.create({
       data: {
         outletId,
+        orderNumber: data.orderNumber,
         tableNumber: data.tableNumber,
         source: data.source,
         status: data.status,

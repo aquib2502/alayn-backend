@@ -6,6 +6,34 @@ import { Prisma } from '@prisma/client';
 export class OrderService {
   private orderRepository = new OrderRepository();
 
+  private async generateCustomOrderId(outletId: string): Promise<string> {
+    const outlet = await prisma.outlet.findUnique({
+      where: { id: outletId },
+      include: { business: true },
+    });
+
+    const restaurantName = outlet?.name || outlet?.business?.name || 'ALAYN';
+    const prefix = restaurantName.replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase().padEnd(3, 'X');
+
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const dateKey = `${yyyy}${mm}${dd}`;
+
+    // Count today's orders for this outlet to generate atomic sequential number
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const countToday = await prisma.order.count({
+      where: {
+        outletId,
+        createdAt: { gte: todayStart },
+      },
+    });
+
+    const sequence = String(countToday + 1).padStart(5, '0');
+    return `${prefix}${dateKey}${sequence}`;
+  }
+
   async createOrder(outletId: string, data: { tableNumber?: number; source: 'COUNTER' | 'QR' | 'DELIVERY'; tableToken?: string; items: { menuItemId: string; quantity: number }[] }) {
     // 1. Fetch Outlet tax rates
     const outlet = await prisma.outlet.findFirst({
@@ -19,6 +47,9 @@ export class OrderService {
     const sgstRate = outlet.sgstRateDecimal.toNumber();
 
     let resolvedTableNumber = data.tableNumber;
+
+    // Generate custom order number (e.g. ALA2026072200001)
+    const orderNumber = await this.generateCustomOrderId(outletId);
 
     // Validate QR ordering TableToken
     if (data.source === 'QR') {
@@ -94,6 +125,7 @@ export class OrderService {
     const totalPaise = subtotalPaise + taxPaise;
 
     return this.orderRepository.createOrder(outletId, {
+      orderNumber,
       tableNumber: resolvedTableNumber,
       source: data.source,
       status: 'RECEIVED',

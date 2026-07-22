@@ -26,10 +26,10 @@ const router = Router();
 const controller = new OrderController();
 
 // Flexible auth middleware for ordering:
-// If Bearer token is passed, authenticate user and check business.
+// If authorization header OR session cookie is passed, authenticate user and check business.
 // If not, allow only if request source is QR and has valid TableToken.
 async function flexibleOrderAuth(req: Request, res: Response, next: NextFunction) {
-  if (req.headers.authorization) {
+  if (req.headers.authorization || req.cookies?.accessToken || (req.headers.cookie && req.headers.cookie.includes('accessToken'))) {
     return authMiddleware(req, res, (err) => {
       if (err) return next(err);
       return businessMiddleware(req, res, next);

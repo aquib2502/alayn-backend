@@ -12,6 +12,7 @@ import wasteRoutes from '../modules/waste/waste.routes';
 import analyticsRoutes from '../modules/analytics/analytics.routes';
 import dashboardRoutes from '../modules/analytics/dashboard.routes';
 import ticketRoutes from '../modules/tickets/ticket.routes';
+import tableRoutes from '../modules/tables/table.routes';
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.use('/attendance', attendanceRoutes);
 router.use('/inventory', inventoryRoutes);
 router.use('/purchase-orders', purchaseOrderRoutes);
 router.use('/menu', menuRoutes);
+router.use('/tables', tableRoutes);
 router.use('/orders', orderRoutes);
 router.use('/kitchen', kitchenRouter);
 router.use('/waste-logs', wasteRoutes);

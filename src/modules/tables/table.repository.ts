@@ -1,0 +1,140 @@
+import { prisma } from '../../config/prisma';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = prisma as any;
+
+export class TableRepository {
+  async findTablesByOutlet(outletId: string) {
+    return db.table.findMany({
+      where: {
+        outletId,
+      },
+      include: {
+        tokens: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+        },
+      },
+      orderBy: {
+        tableNumber: 'asc',
+      },
+    });
+  }
+
+  async getMaxTableNumber(outletId: string): Promise<number> {
+    const aggregate = await db.table.aggregate({
+      where: {
+        outletId,
+      },
+      _max: {
+        tableNumber: true,
+      },
+    });
+    return aggregate._max.tableNumber || 0;
+  }
+
+  async findTableById(outletId: string, id: string) {
+    return db.table.findFirst({
+      where: {
+        id,
+        outletId,
+      },
+      include: {
+        tokens: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+        },
+      },
+    });
+  }
+
+  async updateTable(
+    outletId: string,
+    id: string,
+    data: { tableType?: 'AC' | 'NON_AC'; status?: 'AVAILABLE' | 'OCCUPIED' }
+  ) {
+    return db.table.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async deleteTable(outletId: string, id: string) {
+    return prisma.$transaction(async (tx: any) => {
+      // Hard delete the table (and cascading tokens)
+      await tx.table.delete({
+        where: { id },
+      });
+
+      // Fetch all remaining tables ordered by tableNumber ascending
+      const remainingTables = await tx.table.findMany({
+        where: { outletId },
+        orderBy: { tableNumber: 'asc' },
+      });
+
+      // Renumber sequential table numbers (1, 2, 3...)
+      for (let i = 0; i < remainingTables.length; i++) {
+        const expectedNum = i + 1;
+        if (remainingTables[i].tableNumber !== expectedNum) {
+          await tx.table.update({
+            where: { id: remainingTables[i].id },
+            data: { tableNumber: expectedNum },
+          });
+        }
+      }
+    });
+  }
+
+  async createTableWithToken(
+    outletId: string,
+    tableNumber: number,
+    tableType: 'AC' | 'NON_AC',
+    token: string,
+    expiresAt: Date
+  ) {
+    return prisma.$transaction(async (tx: any) => {
+      const table = await tx.table.create({
+        data: {
+          outletId,
+          tableNumber,
+          tableType,
+          status: 'AVAILABLE',
+        },
+      });
+
+      const tableToken = await tx.tableToken.create({
+        data: {
+          outletId,
+          tableId: table.id,
+          tableNumber: table.tableNumber,
+          token,
+          expiresAt,
+        },
+      });
+
+      return { ...table, token: tableToken };
+    });
+  }
+
+  async generateNewToken(
+    outletId: string,
+    tableId: string,
+    tableNumber: number,
+    token: string,
+    expiresAt: Date
+  ) {
+    return db.tableToken.create({
+      data: {
+        outletId,
+        tableId,
+        tableNumber,
+        token,
+        expiresAt,
+      },
+    });
+  }
+}
