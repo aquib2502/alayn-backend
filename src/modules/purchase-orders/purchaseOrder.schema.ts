@@ -17,3 +17,13 @@ export const receivePOSchema = z.object({
     expiryDate: z.string().transform((val) => new Date(val)),
   })).min(1),
 });
+
+export const createSupplierSchema = z.object({
+  name: z.string().min(1),
+  contactPerson: z.string().min(1),
+  phone: z.string().min(1),
+  email: z.string().email(),
+  address: z.string().min(1),
+  category: z.string().optional(),
+});
+

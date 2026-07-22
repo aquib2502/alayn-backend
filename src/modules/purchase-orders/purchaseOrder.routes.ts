@@ -15,6 +15,7 @@ router.use(businessMiddleware);
 // Only OWNER & MANAGER can perform PO activities
 router.get('/suppliers', authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF'), controller.getSuppliers);
 router.post('/suppliers', authorize('BUSINESS_OWNER', 'MANAGER'), controller.createSupplier);
+router.delete('/suppliers/:id', authorize('BUSINESS_OWNER', 'MANAGER'), controller.deleteSupplier);
 router.get('/', authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF'), controller.getPOs);
 router.post('/', authorize('BUSINESS_OWNER', 'MANAGER'), validate({ body: createPOSchema }), controller.createPO);
 router.patch('/:id/receive', authorize('BUSINESS_OWNER', 'MANAGER'), validate({ body: receivePOSchema }), controller.receivePO);

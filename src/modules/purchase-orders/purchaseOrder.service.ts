@@ -14,6 +14,14 @@ export class PurchaseOrderService {
     return this.poRepository.findSuppliers(outletId);
   }
 
+  async deleteSupplier(outletId: string, id: string) {
+    const supplier = await this.poRepository.findSupplierById(outletId, id);
+    if (!supplier) {
+      throw new AppError('SUPPLIER_NOT_FOUND', 'Supplier not found', 404);
+    }
+    return this.poRepository.deleteSupplier(outletId, id);
+  }
+
   async getPurchaseOrders(outletId: string) {
     return this.poRepository.findPOs(outletId);
   }

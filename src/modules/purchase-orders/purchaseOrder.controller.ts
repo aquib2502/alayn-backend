@@ -25,6 +25,17 @@ export class PurchaseOrderController {
     }
   };
 
+  deleteSupplier = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const outletId = req.outletId!;
+      const { id } = req.params;
+      await this.poService.deleteSupplier(outletId, id);
+      return sendSuccess(res, { message: 'Supplier deleted successfully' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   getPOs = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const outletId = req.outletId!;

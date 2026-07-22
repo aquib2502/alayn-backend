@@ -17,6 +17,13 @@ export class PurchaseOrderRepository {
     });
   }
 
+  async deleteSupplier(outletId: string, id: string) {
+    return prisma.supplier.updateMany({
+      where: { id, outletId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+  }
+
   async createPO(outletId: string, supplierId: string, totalAmountPaise: number, items: { itemId: string; orderedQuantity: number; unitCostPaise: number }[]) {
     return prisma.purchaseOrder.create({
       data: {
