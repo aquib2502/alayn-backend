@@ -11,4 +11,5 @@ export const createBulkTablesSchema = z.object({
 export const updateTableSchema = z.object({
   tableType: z.enum(['AC', 'NON_AC']).optional(),
   status: z.enum(['AVAILABLE', 'OCCUPIED']).optional(),
+  assignedStaffId: z.string().nullable().optional(),
 });

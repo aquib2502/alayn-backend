@@ -13,11 +13,10 @@ export class OrderRepository {
     totalPaise: number;
     items: { menuItemId: string; quantity: number; unitPricePaise: number; subtotalPaise: number }[];
   }) {
-    return (prisma as any).order.create({
+    const order = await prisma.order.create({
       data: {
         outletId,
-        orderNumber: data.orderNumber,
-        tableNumber: data.tableNumber,
+        tableNumber: isNaN(data.tableNumber as number) ? null : data.tableNumber,
         source: data.source,
         status: data.status,
         subtotalPaise: data.subtotalPaise,
@@ -49,6 +48,22 @@ export class OrderRepository {
         statusHistory: true,
       },
     });
+
+    if (data.orderNumber) {
+      try {
+        await prisma.$executeRawUnsafe(
+          `UPDATE "Order" SET "orderNumber" = $1 WHERE "id" = $2::uuid`,
+          data.orderNumber,
+          order.id
+        );
+        (order as any).orderNumber = data.orderNumber;
+      } catch {
+        // In case column is not pushed yet
+        (order as any).orderNumber = data.orderNumber;
+      }
+    }
+
+    return order;
   }
 
   async findOrderById(outletId: string, id: string) {

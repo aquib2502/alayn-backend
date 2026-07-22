@@ -14,18 +14,18 @@ export class TableService {
 
   async getTables(outletId: string) {
     const tables = await this.repository.findTablesByOutlet(outletId);
-    return tables.map((t: {
-      id: string;
-      tableNumber: number;
-      tableType: string;
-      status: string;
-      createdAt: Date;
-      tokens: Array<{ token: string; expiresAt: Date }>;
-    }) => ({
+    return tables.map((t: any) => ({
       id: t.id,
       tableNumber: t.tableNumber,
       tableType: t.tableType,
       status: t.status,
+      assignedStaffId: t.assignedStaffId || t.assignedStaff?.id || null,
+      assignedStaff: t.assignedStaff ? {
+        id: t.assignedStaff.id,
+        name: t.assignedStaff.name,
+        email: t.assignedStaff.email,
+        role: t.assignedStaff.role,
+      } : null,
       currentToken: t.tokens[0]?.token || null,
       tokenExpiresAt: t.tokens[0]?.expiresAt || null,
       createdAt: t.createdAt,
@@ -71,7 +71,7 @@ export class TableService {
   async updateTable(
     outletId: string,
     tableId: string,
-    data: { tableType?: 'AC' | 'NON_AC'; status?: 'AVAILABLE' | 'OCCUPIED' }
+    data: { tableType?: 'AC' | 'NON_AC'; status?: 'AVAILABLE' | 'OCCUPIED'; assignedStaffId?: string | null }
   ) {
     const existing = await this.repository.findTableById(outletId, tableId);
     if (!existing) {

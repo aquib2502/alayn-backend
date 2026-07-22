@@ -1,8 +1,10 @@
 import { z } from 'zod';
 
 export const createOrderSchema = z.object({
-  tableNumber: z.number().int().positive().optional(),
-  source: z.enum(['COUNTER', 'QR', 'DELIVERY']),
+  tableNumber: z.union([z.number(), z.string()]).optional(),
+  tableNo: z.union([z.number(), z.string()]).optional(),
+  source: z.enum(['COUNTER', 'QR', 'DELIVERY']).optional(),
+  orderSource: z.enum(['COUNTER', 'QR', 'DELIVERY']).optional(),
   tableToken: z.string().optional(),
   items: z.array(z.object({
     menuItemId: z.string().uuid(),
