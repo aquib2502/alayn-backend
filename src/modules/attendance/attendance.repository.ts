@@ -33,8 +33,10 @@ export class AttendanceRepository {
   }
 
   async findAttendanceLogs(outletId: string) {
+    const isAll = !outletId || outletId === 'all';
+    const where = isAll ? {} : { outletId };
     return prisma.attendance.findMany({
-      where: { outletId },
+      where,
       include: {
         employee: true,
       },

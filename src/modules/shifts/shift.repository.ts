@@ -81,8 +81,10 @@ export class ShiftRepository {
   }
 
   async findShifts(outletId: string) {
+    const isAll = !outletId || outletId === 'all';
+    const where = isAll ? { deletedAt: null } : { outletId, deletedAt: null };
     return prisma.shift.findMany({
-      where: { outletId, deletedAt: null },
+      where,
       include: {
         assignments: {
           include: {
@@ -112,8 +114,10 @@ export class ShiftRepository {
   }
 
   async findOutletRosters(outletId: string) {
+    const isAll = !outletId || outletId === 'all';
+    const where = isAll ? {} : { outletId };
     return prisma.employeeRoster.findMany({
-      where: { outletId },
+      where,
       include: {
         employee: true,
         shift: true,
