@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { sendSuccess } from '../../utils/response';
 import { AuthenticatedRequest } from '../../middleware/auth.middleware';
+import { logger } from '../../config/logger';
 
 // Helper to set HTTP-Only cookies
 const setTokenCookies = (res: Response, token: string, refreshToken?: string): void => {
@@ -65,18 +66,17 @@ export class AuthController {
 
   refresh = async (req: Request, res: Response, next: NextFunction) => {
     try {
+      logger.info('[AUTH REFRESH ATTEMPT] Incoming token refresh request...');
+
       const refreshToken =
         req.cookies?.refreshToken ||
         req.body?.refreshToken ||
         (req.headers['x-refresh-token'] as string);
 
       if (!refreshToken) {
-        console.warn('[AUTH REFRESH FAILED] No refresh token provided in cookies, body, or headers.', {
+        logger.warn('[AUTH REFRESH FAILED] No refresh token provided in cookies, body, or headers.', {
           cookiesReceived: req.cookies ? Object.keys(req.cookies) : [],
-          headersReceived: {
-            cookie: req.headers.cookie ? 'PRESENT' : 'ABSENT',
-            'x-refresh-token': req.headers['x-refresh-token'] ? 'PRESENT' : 'ABSENT',
-          },
+          hasCookieHeader: !!req.headers.cookie,
         });
         return res.status(401).json({
           success: false,
@@ -97,12 +97,7 @@ export class AuthController {
         user: result.user,
       });
     } catch (error: any) {
-      console.error('[AUTH REFRESH ERROR]', {
-        message: error?.message || error,
-        code: error?.code || 'UNKNOWN_REFRESH_ERROR',
-        stack: error?.stack,
-        cookies: req.cookies ? Object.keys(req.cookies) : [],
-      });
+      logger.warn(`[AUTH REFRESH FAILED] Error refreshing token: ${error?.message || error}`);
       next(error);
     }
   };

@@ -4,8 +4,12 @@ import { logger } from '../config/logger';
 import { sendError } from '../utils/response';
 
 export function errorMiddleware(err: any, req: Request, res: Response, next: NextFunction) {
-  // Log the error
-  logger.error(err);
+  // Log the error (log expected 401/403 client auth failures as warnings to prevent log clutter)
+  if (err instanceof AppError && (err.statusCode === 401 || err.statusCode === 403)) {
+    logger.warn(`[AUTH ${err.statusCode}] ${err.message} - Path: ${req.originalUrl}`);
+  } else {
+    logger.error(err);
+  }
 
   if (err instanceof AppError) {
     return sendError(res, err.code, err.message, err.statusCode);
