@@ -114,9 +114,11 @@ export class InventoryRepository {
     const now = new Date();
     const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
+    const isAll = !outletId || outletId === 'all';
+
     const expiringBatches = await prisma.stockBatch.findMany({
       where: {
-        outletId,
+        ...(isAll ? {} : { outletId }),
         expiryDate: {
           lte: thirtyDaysFromNow,
         },
