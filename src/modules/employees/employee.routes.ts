@@ -65,7 +65,7 @@ router.use(businessMiddleware);
 // Only OWNER & MANAGER can perform employee profile actions
 router.post('/bulk-upload', authorize('BUSINESS_OWNER', 'MANAGER'), memoryUpload.single('file'), controller.bulkUpload);
 router.post('/', authorize('BUSINESS_OWNER', 'MANAGER'), validate({ body: createEmployeeSchema }), controller.create);
-router.get('/', authorize('BUSINESS_OWNER', 'MANAGER'), controller.list);
+router.get('/', authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF'), controller.list);
 router.patch('/:id', authorize('BUSINESS_OWNER', 'MANAGER'), validate({ body: updateEmployeeSchema }), controller.update);
 router.delete('/:id', authorize('BUSINESS_OWNER', 'MANAGER'), controller.delete);
 

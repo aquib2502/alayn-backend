@@ -5,7 +5,7 @@ const db = prisma as any;
 
 export class TableRepository {
   async findTablesByOutlet(outletId: string) {
-    return db.table.findMany({
+    const tables = await db.table.findMany({
       where: {
         outletId,
       },
@@ -29,6 +29,28 @@ export class TableRepository {
       orderBy: {
         tableNumber: 'asc',
       },
+    });
+
+    const activeOrders = await prisma.order.findMany({
+      where: {
+        outletId,
+        status: { notIn: ['COMPLETED', 'CANCELLED'] },
+        deletedAt: null,
+      },
+      select: { tableNumber: true },
+    });
+
+    const occupiedTableNumbers = new Set(
+      activeOrders
+        .map((o) => o.tableNumber)
+        .filter((n): n is number => n !== null && n !== undefined)
+    );
+
+    return tables.map((t: any) => {
+      if (occupiedTableNumbers.has(t.tableNumber)) {
+        return { ...t, status: 'OCCUPIED' };
+      }
+      return t;
     });
   }
 
