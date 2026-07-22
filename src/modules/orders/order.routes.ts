@@ -26,42 +26,53 @@ const router = Router();
 const controller = new OrderController();
 
 // Flexible auth middleware for ordering:
-// If authorization header OR session cookie is passed, authenticate user and check business.
-// If not, allow only if request source is QR and has valid TableToken.
+// If request has logged-in user session (cookie/auth header), run standard auth.
+// Otherwise, check if request is customer QR order with tableToken.
 async function flexibleOrderAuth(req: Request, res: Response, next: NextFunction) {
-  if (req.headers.authorization || req.cookies?.accessToken || (req.headers.cookie && req.headers.cookie.includes('accessToken'))) {
+  const hasToken = req.cookies?.token || req.cookies?.accessToken || req.headers.authorization || req.headers.cookie;
+  if (hasToken) {
     return authMiddleware(req, res, (err) => {
-      if (err) return next(err);
+      if (err) {
+        // If cookie/token was missing/invalid but tableToken exists, fall back to QR token
+        if (req.body && req.body.source === 'QR' && req.body.tableToken) {
+          return processTableTokenAuth(req, res, next);
+        }
+        return next(err);
+      }
       return businessMiddleware(req, res, next);
     });
   }
 
-  // QR order customer access
+  // QR order customer access fallback
   if (req.body && req.body.source === 'QR' && req.body.tableToken) {
-    try {
-      const tokenRecord = await prisma.tableToken.findUnique({
-        where: { token: req.body.tableToken },
-      });
-      if (!tokenRecord) {
-        return next(new AppError('INVALID_TOKEN', 'Table token is invalid', 400));
-      }
-      if (new Date() > tokenRecord.expiresAt) {
-        return next(new AppError('EXPIRED_TOKEN', 'Table token has expired', 400));
-      }
-      req.outletId = tokenRecord.outletId;
-      req.user = {
-        id: '00000000-0000-0000-0000-000000000000', // customer placeholder
-        email: 'customer@table.com',
-        role: 'STAFF', // Allowed to create orders
-        name: `Table ${tokenRecord.tableNumber} Customer`,
-      };
-      return next();
-    } catch (err) {
-      return next(err);
-    }
+    return processTableTokenAuth(req, res, next);
   }
 
   return next(new AppError('UNAUTHORIZED', 'Authentication token or Table token is required', 401));
+}
+
+async function processTableTokenAuth(req: Request, res: Response, next: NextFunction) {
+  try {
+    const tokenRecord = await prisma.tableToken.findUnique({
+      where: { token: req.body.tableToken },
+    });
+    if (!tokenRecord) {
+      return next(new AppError('INVALID_TOKEN', 'Table token is invalid', 400));
+    }
+    if (new Date() > tokenRecord.expiresAt) {
+      return next(new AppError('EXPIRED_TOKEN', 'Table token has expired', 400));
+    }
+    req.outletId = tokenRecord.outletId;
+    req.user = {
+      id: '00000000-0000-0000-0000-000000000000', // customer placeholder
+      email: 'customer@table.com',
+      role: 'STAFF', // Allowed to create orders
+      name: `Table ${tokenRecord.tableNumber} Customer`,
+    };
+    return next();
+  } catch (err) {
+    return next(err);
+  }
 }
 
 // 1. Public Table Menu fetching (no user auth, rate-limited)

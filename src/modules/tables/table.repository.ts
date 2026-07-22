@@ -10,6 +10,15 @@ export class TableRepository {
         outletId,
       },
       include: {
+        assignedStaff: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            userId: true,
+          },
+        },
         tokens: {
           orderBy: {
             createdAt: 'desc',
@@ -42,6 +51,15 @@ export class TableRepository {
         outletId,
       },
       include: {
+        assignedStaff: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            userId: true,
+          },
+        },
         tokens: {
           orderBy: {
             createdAt: 'desc',
@@ -55,11 +73,22 @@ export class TableRepository {
   async updateTable(
     outletId: string,
     id: string,
-    data: { tableType?: 'AC' | 'NON_AC'; status?: 'AVAILABLE' | 'OCCUPIED' }
+    data: { tableType?: 'AC' | 'NON_AC'; status?: 'AVAILABLE' | 'OCCUPIED'; assignedStaffId?: string | null }
   ) {
     return db.table.update({
       where: { id },
       data,
+      include: {
+        assignedStaff: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            userId: true,
+          },
+        },
+      },
     });
   }
 

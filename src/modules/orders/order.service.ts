@@ -34,7 +34,7 @@ export class OrderService {
     return `${prefix}${dateKey}${sequence}`;
   }
 
-  async createOrder(outletId: string, data: { tableNumber?: number; source: 'COUNTER' | 'QR' | 'DELIVERY'; tableToken?: string; items: { menuItemId: string; quantity: number }[] }) {
+  async createOrder(outletId: string, data: { tableNumber?: number | string; tableNo?: number | string; source?: 'COUNTER' | 'QR' | 'DELIVERY'; orderSource?: 'COUNTER' | 'QR' | 'DELIVERY'; tableToken?: string; items: { menuItemId: string; quantity: number }[] }) {
     // 1. Fetch Outlet tax rates
     const outlet = await prisma.outlet.findFirst({
       where: { id: outletId, deletedAt: null },
@@ -46,17 +46,15 @@ export class OrderService {
     const cgstRate = outlet.cgstRateDecimal.toNumber();
     const sgstRate = outlet.sgstRateDecimal.toNumber();
 
-    let resolvedTableNumber = data.tableNumber;
+    const resolvedSource = data.source || data.orderSource || 'COUNTER';
+    const rawTable = data.tableNumber ?? data.tableNo;
+    let resolvedTableNumber = typeof rawTable === 'number' ? rawTable : (typeof rawTable === 'string' ? parseInt(rawTable, 10) || undefined : undefined);
 
     // Generate custom order number (e.g. ALA2026072200001)
     const orderNumber = await this.generateCustomOrderId(outletId);
 
-    // Validate QR ordering TableToken
-    if (data.source === 'QR') {
-      if (!data.tableToken) {
-        throw new AppError('TABLE_TOKEN_REQUIRED', 'Table token is required for QR ordering', 400);
-      }
-
+    // Validate QR ordering TableToken if provided
+    if (data.source === 'QR' && data.tableToken) {
       const tokenRecord = await prisma.tableToken.findUnique({
         where: { token: data.tableToken },
       });
@@ -74,8 +72,10 @@ export class OrderService {
       }
 
       resolvedTableNumber = tokenRecord.tableNumber;
+    }
 
-      // Ensure only one active order exists for this table
+    // Ensure only one active order exists for this table
+    if (resolvedTableNumber) {
       const activeOrder = await prisma.order.findFirst({
         where: {
           outletId,
@@ -127,7 +127,7 @@ export class OrderService {
     return this.orderRepository.createOrder(outletId, {
       orderNumber,
       tableNumber: resolvedTableNumber,
-      source: data.source,
+      source: resolvedSource,
       status: 'RECEIVED',
       subtotalPaise,
       cgstPaise,

@@ -8,7 +8,8 @@ export class DashboardController {
   getKpi = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const outletId = req.outletId || (req.query.outletId as string);
-      const result = await this.dashboardService.getKpis(outletId);
+      const businessId = req.businessId;
+      const result = await this.dashboardService.getKpis(outletId, businessId);
       return sendSuccess(res, result);
     } catch (error) {
       next(error);
@@ -18,7 +19,8 @@ export class DashboardController {
   getSalesForecast = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const outletId = req.outletId || (req.query.outletId as string);
-      const result = await this.dashboardService.getSalesForecast(outletId);
+      const businessId = req.businessId;
+      const result = await this.dashboardService.getSalesForecast(outletId, businessId);
       return sendSuccess(res, result);
     } catch (error) {
       next(error);
@@ -28,7 +30,8 @@ export class DashboardController {
   getInventoryForecast = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const outletId = req.outletId || (req.query.outletId as string);
-      const result = await this.dashboardService.getInventoryForecast(outletId);
+      const businessId = req.businessId;
+      const result = await this.dashboardService.getInventoryForecast(outletId, businessId);
       return sendSuccess(res, result);
     } catch (error) {
       next(error);
