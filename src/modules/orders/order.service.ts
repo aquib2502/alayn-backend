@@ -34,7 +34,7 @@ export class OrderService {
     return `${prefix}${dateKey}${sequence}`;
   }
 
-  async createOrder(outletId: string, data: { tableNumber?: number | string; tableNo?: number | string; source?: 'COUNTER' | 'QR' | 'DELIVERY'; orderSource?: 'COUNTER' | 'QR' | 'DELIVERY'; tableToken?: string; items: { menuItemId: string; quantity: number }[] }) {
+  async createOrder(outletId: string, data: { tableNumber?: number | string; tableNo?: number | string; source?: 'TABLE' | 'COUNTER' | 'QR' | 'DELIVERY'; orderSource?: 'TABLE' | 'COUNTER' | 'QR' | 'DELIVERY'; tableToken?: string; items: { menuItemId: string; quantity: number }[] }) {
     // 1. Fetch Outlet tax rates
     const outlet = await prisma.outlet.findFirst({
       where: { id: outletId, deletedAt: null },
@@ -50,8 +50,9 @@ export class OrderService {
     const rawTable = data.tableNumber ?? data.tableNo;
     let resolvedTableNumber = typeof rawTable === 'number' ? rawTable : (typeof rawTable === 'string' ? parseInt(rawTable, 10) || undefined : undefined);
 
-    // Generate custom order number (e.g. ALA2026072200001)
-    const orderNumber = await this.generateCustomOrderId(outletId);
+    if (resolvedSource === 'TABLE' && !resolvedTableNumber) {
+      throw new AppError('TABLE_NUMBER_REQUIRED', 'Please select a table number for table orders', 400);
+    }
 
     // Validate QR ordering TableToken if provided
     if (data.source === 'QR' && data.tableToken) {
@@ -74,25 +75,7 @@ export class OrderService {
       resolvedTableNumber = tokenRecord.tableNumber;
     }
 
-    // Ensure only one active order exists for this table
-    if (resolvedTableNumber) {
-      const activeOrder = await prisma.order.findFirst({
-        where: {
-          outletId,
-          tableNumber: resolvedTableNumber,
-          status: {
-            notIn: ['COMPLETED', 'CANCELLED'],
-          },
-          deletedAt: null,
-        },
-      });
-
-      if (activeOrder) {
-        throw new AppError('ACTIVE_ORDER_EXISTS', 'There is already an active order for this table', 400);
-      }
-    }
-
-    // 2. Fetch all menu items to calculate prices
+    // 2. Fetch all menu items to calculate prices for incoming items
     const itemDetails: { menuItemId: string; quantity: number; unitPricePaise: number; subtotalPaise: number }[] = [];
     let subtotalPaise = 0;
 
@@ -124,11 +107,42 @@ export class OrderService {
     const taxPaise = cgstPaise + sgstPaise;
     const totalPaise = subtotalPaise + taxPaise;
 
-    return this.orderRepository.createOrder(outletId, {
+    // Check if an active order exists for this table
+    if (resolvedTableNumber) {
+      const activeOrder = await prisma.order.findFirst({
+        where: {
+          outletId,
+          tableNumber: resolvedTableNumber,
+          status: {
+            notIn: ['COMPLETED', 'CANCELLED'],
+          },
+          deletedAt: null,
+        },
+      });
+
+      if (activeOrder) {
+        // Append items to active running order
+        const appended = await this.orderRepository.appendItemsToOrder(
+          activeOrder.id,
+          { subtotalPaise, cgstPaise, sgstPaise, taxPaise, totalPaise },
+          itemDetails
+        );
+        await prisma.table.updateMany({
+          where: { outletId, tableNumber: resolvedTableNumber },
+          data: { status: 'OCCUPIED' },
+        });
+        return this.transformOrder(appended);
+      }
+    }
+
+    // Generate custom order number (e.g. ALA2026072200001) for new order
+    const orderNumber = await this.generateCustomOrderId(outletId);
+
+    const createdOrder = await this.orderRepository.createOrder(outletId, {
       orderNumber,
       tableNumber: resolvedTableNumber,
       source: resolvedSource,
-      status: 'RECEIVED',
+      status: 'SENT_TO_KITCHEN',
       subtotalPaise,
       cgstPaise,
       sgstPaise,
@@ -136,10 +150,43 @@ export class OrderService {
       totalPaise,
       items: itemDetails,
     });
+
+    if (resolvedTableNumber) {
+      await prisma.table.updateMany({
+        where: { outletId, tableNumber: resolvedTableNumber },
+        data: { status: 'OCCUPIED' },
+      });
+    }
+
+    return this.transformOrder(createdOrder);
+  }
+
+  public transformOrder(order: any) {
+    if (!order) return order;
+    return {
+      ...order,
+      orderNo: order.orderNumber || `#${order.id.slice(0, 8)}`,
+      orderSource: order.source,
+      tableNo: order.tableNumber !== null && order.tableNumber !== undefined ? String(order.tableNumber) : undefined,
+      subtotal: (order.subtotalPaise || 0) / 100,
+      taxAmount: (order.taxPaise || 0) / 100,
+      totalAmount: (order.totalPaise || 0) / 100,
+      orderItems: (order.items || []).map((item: any) => ({
+        ...item,
+        unitPrice: (item.unitPricePaise || 0) / 100,
+        subtotal: (item.subtotalPaise || 0) / 100,
+      })),
+    };
+  }
+
+  async getOrders(outletId: string, status?: string) {
+    const orders = await this.orderRepository.findOrders(outletId, status);
+    return orders.map((o) => this.transformOrder(o));
   }
 
   async getKitchenOrders(outletId: string) {
-    return this.orderRepository.findKitchenOrders(outletId);
+    const orders = await this.orderRepository.findKitchenOrders(outletId);
+    return orders.map((o) => this.transformOrder(o));
   }
 
   async createPayment(outletId: string, orderId: string, data: { amountPaise: number; method: 'UPI' | 'CARD' | 'CASH'; status: 'PENDING' | 'CONFIRMED' | 'FAILED' }) {
@@ -150,7 +197,14 @@ export class OrderService {
     return this.orderRepository.createPayment(orderId, data.amountPaise, data.method, data.status);
   }
 
-  async updateOrderStatus(outletId: string, orderId: string, status: 'RECEIVED' | 'PREPARING' | 'READY' | 'SERVED' | 'DISPATCHED' | 'COMPLETED' | 'CANCELLED', comment?: string, changedById?: string) {
+  async updateOrderStatus(
+    outletId: string,
+    orderId: string,
+    status: 'SENT_TO_KITCHEN' | 'PREPARING' | 'READY' | 'SERVED' | 'DISPATCHED' | 'COMPLETED' | 'CANCELLED',
+    comment?: string,
+    changedById?: string,
+    paymentMethod?: 'CASH' | 'CARD' | 'UPI'
+  ) {
     const order = await this.orderRepository.findOrderById(outletId, orderId);
     if (!order) {
       throw new AppError('ORDER_NOT_FOUND', 'Order not found', 404);
@@ -163,17 +217,22 @@ export class OrderService {
     }
 
     if (status === 'COMPLETED') {
-      // 1. Check payment balance
-      const confirmedPaymentsSum = order.payments
+      // 1. Check payment balance, auto-record payment if needed
+      let confirmedPaymentsSum = order.payments
         .filter((p) => p.status === 'CONFIRMED')
         .reduce((sum, p) => sum + p.amountPaise, 0);
 
-      if (confirmedPaymentsSum !== order.totalPaise) {
-        throw new AppError(
-          'PAYMENT_MISMATCH',
-          `Cannot complete order: Confirmed payments total ₹${confirmedPaymentsSum / 100} does not match order total ₹${order.totalPaise / 100}`,
-          400
-        );
+      if (confirmedPaymentsSum < order.totalPaise) {
+        const remainingPaise = order.totalPaise - confirmedPaymentsSum;
+        let method: 'CASH' | 'CARD' | 'UPI' = paymentMethod || 'CASH';
+        if (!paymentMethod && comment) {
+          const methodCandidate = comment.toUpperCase();
+          if (methodCandidate.includes('CARD')) method = 'CARD';
+          else if (methodCandidate.includes('UPI')) method = 'UPI';
+        }
+
+        await this.orderRepository.createPayment(orderId, remainingPaise, method, 'CONFIRMED');
+        confirmedPaymentsSum = order.totalPaise;
       }
 
       // 2. Perform Order stock deduction & status change in a single transaction
@@ -242,29 +301,63 @@ export class OrderService {
           include: { items: true, statusHistory: true },
         });
 
+        // Release Table back to AVAILABLE
+        if (order.tableNumber !== null && order.tableNumber !== undefined) {
+          await tx.table.updateMany({
+            where: { outletId, tableNumber: order.tableNumber },
+            data: { status: 'AVAILABLE' },
+          });
+        }
+
         // Add history entry
         await tx.orderStatusHistory.create({
           data: {
             orderId,
             status: 'COMPLETED',
             changedById,
-            comment: comment || 'Order completed and stock deducted',
+            comment: comment || 'Order completed, payment settled, and table freed',
           },
         });
 
-        return updatedOrder;
+        return this.transformOrder(updatedOrder);
+      });
+    }
+
+    // Free table if order is cancelled
+    if (status === 'CANCELLED' && order.tableNumber !== null && order.tableNumber !== undefined) {
+      await prisma.table.updateMany({
+        where: { outletId, tableNumber: order.tableNumber },
+        data: { status: 'AVAILABLE' },
       });
     }
 
     // Normal status transition (not COMPLETED)
+    if (status === 'PREPARING') {
+      await (prisma.orderItem as any).updateMany({
+        where: { orderId, status: 'SENT_TO_KITCHEN' },
+        data: { status: 'PREPARING' },
+      });
+    } else if (status === 'READY') {
+      await (prisma.orderItem as any).updateMany({
+        where: { orderId, status: 'PREPARING' },
+        data: { status: 'READY' },
+      });
+    } else if (status === 'SERVED') {
+      await (prisma.orderItem as any).updateMany({
+        where: { orderId, status: 'READY' },
+        data: { status: 'SERVED' },
+      });
+    }
+
     await prisma.order.update({
       where: { id: orderId },
-      data: { status },
+      data: { status: status as any },
     });
 
     await this.orderRepository.addStatusHistory(orderId, status, changedById, comment);
 
-    return this.orderRepository.findOrderById(outletId, orderId);
+    const updated = await this.orderRepository.findOrderById(outletId, orderId);
+    return this.transformOrder(updated);
   }
 
   async getTableMenu(token: string) {

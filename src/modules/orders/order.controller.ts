@@ -15,6 +15,17 @@ export class OrderController {
     }
   };
 
+  getAll = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const outletId = req.outletId!;
+      const status = req.query.status as string | undefined;
+      const result = await this.orderService.getOrders(outletId, status);
+      return sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   getKitchenOrders = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const outletId = req.outletId!;
@@ -40,15 +51,16 @@ export class OrderController {
     try {
       const outletId = req.outletId!;
       const { id: orderId } = req.params;
-      const { status, comment } = req.body;
+      const { status, comment, paymentMethod } = req.body;
       const changedById = req.user!.id; // Logged in user ID
 
-      const result = await this.orderService.updateOrderStatus(
+      const result = await (this.orderService as any).updateOrderStatus(
         outletId,
         orderId,
         status,
         comment,
-        changedById
+        changedById,
+        paymentMethod
       );
       return sendSuccess(res, result);
     } catch (error) {

@@ -82,6 +82,7 @@ router.get('/tables/:token/menu', qrLimiter, controller.getTableMenu);
 router.post('/', flexibleOrderAuth, validate({ body: createOrderSchema }), controller.create);
 
 // 3. Management routes (require full user auth)
+router.get('/', authMiddleware, businessMiddleware, authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF', 'KITCHEN'), controller.getAll);
 router.patch('/:id/status', authMiddleware, businessMiddleware, authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF', 'KITCHEN'), validate({ body: updateOrderStatusSchema }), controller.updateStatus);
 router.post('/:id/payments', authMiddleware, businessMiddleware, authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF'), validate({ body: createPaymentSchema }), controller.createPayment);
 
@@ -89,7 +90,8 @@ router.post('/:id/payments', authMiddleware, businessMiddleware, authorize('BUSI
 const kitchenRouter = Router();
 kitchenRouter.use(authMiddleware);
 kitchenRouter.use(businessMiddleware);
-kitchenRouter.get('/orders', authorize('BUSINESS_OWNER', 'MANAGER', 'KITCHEN'), controller.getKitchenOrders);
+kitchenRouter.get('/orders', authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF', 'KITCHEN'), controller.getKitchenOrders);
+kitchenRouter.get('/tickets', authorize('BUSINESS_OWNER', 'MANAGER', 'STAFF', 'KITCHEN'), controller.getKitchenOrders);
 
 export { kitchenRouter };
 export default router;

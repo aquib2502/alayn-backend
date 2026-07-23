@@ -70,13 +70,14 @@ enum AlertStatus {
 }
 
 enum OrderSource {
+  TABLE
   COUNTER
   QR
   DELIVERY
 }
 
 enum OrderStatus {
-  RECEIVED
+  SENT_TO_KITCHEN
   PREPARING
   READY
   SERVED
@@ -662,7 +663,7 @@ model Order {
   orderNumber   String?     @unique
   tableNumber   Int?
   source        OrderSource
-  status        OrderStatus @default(RECEIVED)
+  status        OrderStatus @default(SENT_TO_KITCHEN)
   subtotalPaise Int
   cgstPaise     Int
   sgstPaise     Int
@@ -683,14 +684,16 @@ model Order {
 }
 
 model OrderItem {
-  id             String   @id @default(uuid()) @db.Uuid
-  orderId        String   @db.Uuid
-  menuItemId     String   @db.Uuid
+  id             String      @id @default(uuid()) @db.Uuid
+  orderId        String      @db.Uuid
+  menuItemId     String      @db.Uuid
   quantity       Int
   unitPricePaise Int
   subtotalPaise  Int
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  status         OrderStatus @default(SENT_TO_KITCHEN)
+  kotNo          Int         @default(1)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
   order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)

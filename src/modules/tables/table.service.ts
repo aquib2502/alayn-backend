@@ -25,6 +25,7 @@ export class TableService {
         name: t.assignedStaff.name,
         email: t.assignedStaff.email,
         role: t.assignedStaff.role,
+        userId: t.assignedStaff.userId,
       } : null,
       currentToken: t.tokens[0]?.token || null,
       tokenExpiresAt: t.tokens[0]?.expiresAt || null,
