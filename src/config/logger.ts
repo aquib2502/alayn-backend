@@ -1,14 +1,21 @@
 import pino from 'pino';
-import pinoPretty from 'pino-pretty';
 import { env } from './env';
 
-const stream = env.NODE_ENV === 'development'
-  ? pinoPretty({
+let stream: any = undefined;
+
+if (env.NODE_ENV === 'development') {
+  try {
+    // Dynamically require pino-pretty in development only
+    const pinoPretty = require('pino-pretty');
+    stream = pinoPretty({
       colorize: true,
       ignore: 'pid,hostname',
       sync: true,
-    })
-  : undefined;
+    });
+  } catch (err) {
+    // Fall back gracefully if pino-pretty is unavailable
+  }
+}
 
 export const logger = pino(
   {
