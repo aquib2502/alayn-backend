@@ -44,6 +44,22 @@ export class ShiftService {
     return this.shiftRepository.createShiftAssignment(outletId, employeeId, shiftId, date);
   }
 
+  async assignShiftBulk(outletId: string, shiftId: string, employeeIds: string[], date: Date): Promise<{ assignedCount: number; total: number; results: any[]; errors: any[] }> {
+    const results: any[] = [];
+    const errors: any[] = [];
+
+    for (const empId of employeeIds) {
+      try {
+        const assigned = await this.assignShift(outletId, shiftId, empId, date);
+        results.push(assigned);
+      } catch (err: any) {
+        errors.push({ employeeId: empId, error: err.message });
+      }
+    }
+
+    return { assignedCount: results.length, total: employeeIds.length, results, errors };
+  }
+
   async createSwapRequest(outletId: string, data: any) {
     // Verify fromEmployee exists and has the assignment
     const assignment = await this.shiftRepository.findShiftAssignment(

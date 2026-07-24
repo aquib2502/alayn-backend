@@ -9,7 +9,8 @@ export const createShiftSchema = z.object({
 });
 
 export const assignShiftSchema = z.object({
-  employeeId: z.string().uuid(),
+  employeeId: z.string().uuid().optional(),
+  employeeIds: z.array(z.string().uuid()).optional(),
   date: z.string().transform((val) => new Date(val)),
 });
 

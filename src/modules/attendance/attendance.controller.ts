@@ -9,7 +9,8 @@ export class AttendanceController {
     try {
       const outletId = req.outletId!;
       const { employeeId } = req.body;
-      const result = await this.attendanceService.checkIn(outletId, employeeId);
+      const userId = req.user?.id;
+      const result = await this.attendanceService.checkIn(outletId, employeeId, userId);
       return sendSuccess(res, result, 201);
     } catch (error) {
       next(error);
@@ -20,7 +21,8 @@ export class AttendanceController {
     try {
       const outletId = req.outletId!;
       const { employeeId } = req.body;
-      const result = await this.attendanceService.checkOut(outletId, employeeId);
+      const userId = req.user?.id;
+      const result = await this.attendanceService.checkOut(outletId, employeeId, userId);
       return sendSuccess(res, result);
     } catch (error) {
       next(error);

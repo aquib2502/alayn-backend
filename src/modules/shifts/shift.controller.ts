@@ -29,9 +29,13 @@ export class ShiftController {
     try {
       const outletId = req.outletId!;
       const { id: shiftId } = req.params;
-      const { employeeId, date } = req.body;
+      const { employeeId, employeeIds, date } = req.body;
 
-      const result = await this.shiftService.assignShift(outletId, shiftId, employeeId, date);
+      const targetEmpIds: string[] = Array.isArray(employeeIds) && employeeIds.length > 0
+        ? employeeIds
+        : (employeeId ? [employeeId] : []);
+
+      const result = await this.shiftService.assignShiftBulk(outletId, shiftId, targetEmpIds, date);
       return sendSuccess(res, result, 201);
     } catch (error) {
       next(error);

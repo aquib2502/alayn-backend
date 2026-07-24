@@ -86,6 +86,7 @@ export class ShiftRepository {
     return prisma.shift.findMany({
       where,
       include: {
+        outlet: { select: { id: true, name: true } },
         assignments: {
           include: {
             employee: true,

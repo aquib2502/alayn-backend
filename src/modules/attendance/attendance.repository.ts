@@ -11,6 +11,15 @@ export class AttendanceRepository {
     });
   }
 
+  async findEmployeeByUserId(userId: string) {
+    return prisma.employee.findFirst({
+      where: {
+        userId,
+        deletedAt: null,
+      },
+    });
+  }
+
   async findOpenAttendance(employeeId: string) {
     return prisma.attendance.findFirst({
       where: {
@@ -20,14 +29,14 @@ export class AttendanceRepository {
     });
   }
 
-  async createAttendance(outletId: string, employeeId: string, date: Date, checkInTime: Date) {
+  async createAttendance(outletId: string, employeeId: string, date: Date, checkInTime: Date, status: 'PRESENT' | 'LATE' = 'PRESENT') {
     return prisma.attendance.create({
       data: {
         outletId,
         employeeId,
         date,
         checkInTime,
-        status: 'PRESENT',
+        status,
       },
     });
   }

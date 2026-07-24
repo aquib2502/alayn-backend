@@ -1,11 +1,24 @@
 import { AttendanceRepository } from './attendance.repository';
 import { AppError } from '../../utils/AppError';
+import { prisma } from '../../config/prisma';
 
 export class AttendanceService {
   private attendanceRepository = new AttendanceRepository();
 
-  async checkIn(outletId: string, employeeId: string) {
-    const employee = await this.attendanceRepository.findEmployee(outletId, employeeId);
+  async checkIn(outletId: string, employeeId?: string, userId?: string) {
+    let targetEmployeeId = employeeId;
+    if (!targetEmployeeId && userId) {
+      const emp = await this.attendanceRepository.findEmployeeByUserId(userId);
+      if (emp) {
+        targetEmployeeId = emp.id;
+        outletId = emp.outletId;
+      }
+    }
+    if (!targetEmployeeId) {
+      throw new AppError('EMPLOYEE_NOT_FOUND', 'Employee profile not found for logged in user', 404);
+    }
+
+    const employee = await this.attendanceRepository.findEmployee(outletId, targetEmployeeId);
     if (!employee) {
       throw new AppError('EMPLOYEE_NOT_FOUND', 'Employee not found', 404);
     }
@@ -13,7 +26,7 @@ export class AttendanceService {
       throw new AppError('INACTIVE_EMPLOYEE', 'Inactive employees cannot check in', 400);
     }
 
-    const openRecord = await this.attendanceRepository.findOpenAttendance(employeeId);
+    const openRecord = await this.attendanceRepository.findOpenAttendance(targetEmployeeId);
     if (openRecord) {
       throw new AppError('ALREADY_CHECKED_IN', 'Employee already has an open attendance record', 400);
     }
@@ -45,21 +58,73 @@ export class AttendanceService {
     // 3. Check Employee Roster Weekly Off
     const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
     const currentDayName = dayNames[now.getDay()];
-    const roster = await this.attendanceRepository.findEmployeeRoster(employeeId, currentDayName);
+    const roster = await this.attendanceRepository.findEmployeeRoster(targetEmployeeId, currentDayName);
     if (roster && roster.shiftId === null) {
       throw new AppError('WEEKLY_OFF', 'Cannot clock in: Today is your scheduled weekly off.', 400);
     }
 
-    return this.attendanceRepository.createAttendance(outletId, employeeId, date, now);
+    // 4. Check Shift timing for early clock-in buffer window & late status tagging
+    const shiftAssignment = await prisma.shiftAssignment.findFirst({
+      where: {
+        employeeId: targetEmployeeId,
+        date: date,
+      },
+      include: {
+        shift: true,
+      },
+    });
+
+    let attendanceStatus: 'PRESENT' | 'LATE' = 'PRESENT';
+
+    if (shiftAssignment && shiftAssignment.shift) {
+      const { startTime, name: shiftName } = shiftAssignment.shift;
+      const [h, m] = startTime.split(':').map(Number);
+
+      const shiftStartTime = new Date(now);
+      shiftStartTime.setHours(h, m, 0, 0);
+
+      // Default early buffer: 30 minutes prior to shift start
+      const earlyBufferMinutes = 30;
+      const earliestAllowed = new Date(shiftStartTime.getTime() - earlyBufferMinutes * 60 * 1000);
+
+      if (now < earliestAllowed) {
+        const earliestStr = earliestAllowed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        throw new AppError(
+          'TOO_EARLY',
+          `Cannot clock in yet: Your ${shiftName} starts at ${startTime}. Early clock-in opens ${earlyBufferMinutes} minutes prior (at ${earliestStr}).`,
+          400
+        );
+      }
+
+      // Late threshold: 15 minutes past shift start time
+      const lateThreshold = new Date(shiftStartTime.getTime() + 15 * 60 * 1000);
+      if (now > lateThreshold) {
+        attendanceStatus = 'LATE';
+      }
+    }
+
+    return this.attendanceRepository.createAttendance(outletId, targetEmployeeId, date, now, attendanceStatus);
   }
 
-  async checkOut(outletId: string, employeeId: string) {
-    const employee = await this.attendanceRepository.findEmployee(outletId, employeeId);
+  async checkOut(outletId: string, employeeId?: string, userId?: string) {
+    let targetEmployeeId = employeeId;
+    if (!targetEmployeeId && userId) {
+      const emp = await this.attendanceRepository.findEmployeeByUserId(userId);
+      if (emp) {
+        targetEmployeeId = emp.id;
+        outletId = emp.outletId;
+      }
+    }
+    if (!targetEmployeeId) {
+      throw new AppError('EMPLOYEE_NOT_FOUND', 'Employee profile not found for logged in user', 404);
+    }
+
+    const employee = await this.attendanceRepository.findEmployee(outletId, targetEmployeeId);
     if (!employee) {
       throw new AppError('EMPLOYEE_NOT_FOUND', 'Employee not found', 404);
     }
 
-    const openRecord = await this.attendanceRepository.findOpenAttendance(employeeId);
+    const openRecord = await this.attendanceRepository.findOpenAttendance(targetEmployeeId);
     if (!openRecord) {
       throw new AppError('NO_OPEN_ATTENDANCE', 'No open attendance record found for this employee', 400);
     }
